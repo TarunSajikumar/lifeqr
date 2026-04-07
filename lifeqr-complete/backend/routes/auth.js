@@ -2,10 +2,18 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const User = require('../models/User');
 
 const router = express.Router();
+
+async function generateShortQrCodeId() {
+  let id;
+  do {
+    id = crypto.randomBytes(4).toString('hex');
+  } while (await User.findOne({ qrCodeId: id }));
+  return id;
+}
 
 // Register route
 router.post('/register', async (req, res) => {
@@ -81,8 +89,8 @@ router.post('/register', async (req, res) => {
         };
       }
       
-      // Generate unique QR code ID
-      const qrCodeId = uuidv4();
+      // Generate unique short QR code ID
+      const qrCodeId = await generateShortQrCodeId();
       userData.qrCodeId = qrCodeId;
       
       // Generate QR code with URL that links to emergency access page

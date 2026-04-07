@@ -41,7 +41,8 @@ router.get('/profile/:qrCodeId', async (req, res) => {
       healthIssues: patient.healthIssues,
       medications: patient.medications,
       emergencyContact: patient.emergencyContact,
-      phone: patient.phone
+      phone: patient.phone,
+      lastLocation: patient.lastLocation
     });
   } catch (error) {
     console.error('Error fetching patient profile:', error);
@@ -78,6 +79,12 @@ router.put('/update', authenticateToken, async (req, res) => {
       emergencyContactName,
       emergencyContactPhone,
       emergencyContactRelationship,
+      specialization,
+      licenseNumber,
+      hospital,
+      vehicleNumber,
+      crewType,
+      station,
       phone,
       address,
       city,
@@ -90,7 +97,7 @@ router.put('/update', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Update fields
+    // Update common fields
     if (name) user.name = name;
     if (phone) user.phone = phone;
     if (address) user.address = address;
@@ -104,7 +111,7 @@ router.put('/update', authenticateToken, async (req, res) => {
       if (allergies !== undefined) user.allergies = allergies;
       if (medications !== undefined) user.medications = medications;
       
-      if (emergencyContactName || emergencyContactPhone) {
+      if (emergencyContactName || emergencyContactPhone || emergencyContactRelationship) {
         user.emergencyContact = {
           name: emergencyContactName || user.emergencyContact?.name,
           phone: emergencyContactPhone || user.emergencyContact?.phone,
@@ -132,6 +139,14 @@ router.put('/update', authenticateToken, async (req, res) => {
       });
       
       user.qrCode = qrCodeDataURL;
+    } else if (user.role === 'doctor') {
+      if (specialization !== undefined) user.specialization = specialization;
+      if (licenseNumber !== undefined) user.licenseNumber = licenseNumber;
+      if (hospital !== undefined) user.hospital = hospital;
+    } else if (user.role === 'crew') {
+      if (vehicleNumber !== undefined) user.vehicleNumber = vehicleNumber;
+      if (crewType !== undefined) user.crewType = crewType;
+      if (station !== undefined) user.station = station;
     }
 
     await user.save();
@@ -149,6 +164,38 @@ router.put('/update', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Update live location for authenticated patient
+router.put('/location', authenticateToken, async (req, res) => {
+  try {
+    const { lat, lng } = req.body;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user || user.role !== 'patient') {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    user.lastLocation = {
+      lat,
+      lng,
+      updatedAt: new Date()
+    };
+
+    await user.save();
+
+    res.json({
+      message: 'Live location updated successfully',
+      lastLocation: user.lastLocation
+    });
+  } catch (error) {
+    console.error('Error updating location:', error);
+    res.status(500).json({ error: 'Failed to update location' });
   }
 });
 

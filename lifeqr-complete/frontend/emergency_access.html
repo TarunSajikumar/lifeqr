@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="qr-scanner.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .font-headline { font-family: 'Manrope', sans-serif; }
@@ -15,42 +17,6 @@
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(128, 75, 255, 0.15);
-    }
-    
-    /* Full-screen modal for QR code scans */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    
-    .modal-content {
-      background: white;
-      border-radius: 20px;
-      max-height: 90vh;
-      overflow-y: auto;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      animation: slideUp 0.3s ease-out;
-    }
-    
-    @keyframes slideUp {
-      from {
-        transform: translateY(50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
     }
   </style>
 </head>
@@ -72,88 +38,6 @@
   </header>
 
   <main class="px-6 py-8 max-w-6xl mx-auto">
-    <!-- QR Code Modal Popup (for QR scans) -->
-    <div id="qrModal" class="modal-overlay hidden">
-      <div class="modal-content">
-        <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 rounded-t-2xl text-white flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-3xl">emergency</span>
-            <h2 class="font-headline text-xl font-bold">Medical Information</h2>
-          </div>
-          <button onclick="closeModal()" class="text-white hover:bg-red-800 p-2 rounded-lg transition">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        
-        <div class="p-6 space-y-4">
-          <!-- Critical Info -->
-          <div class="grid grid-cols-3 gap-3 mb-4">
-            <div class="bg-red-50 p-4 rounded-lg text-center border-2 border-red-200">
-              <p class="text-xs text-gray-600 mb-1">BLOOD TYPE</p>
-              <p id="modalBloodType" class="text-2xl font-bold text-red-600">O+</p>
-            </div>
-            <div class="bg-blue-50 p-4 rounded-lg text-center border-2 border-blue-200">
-              <p class="text-xs text-gray-600 mb-1">AGE</p>
-              <p id="modalAge" class="text-2xl font-bold text-blue-600">--</p>
-            </div>
-            <div class="bg-purple-50 p-4 rounded-lg text-center border-2 border-purple-200">
-              <p class="text-xs text-gray-600 mb-1">EMERGENCY</p>
-              <p id="modalEmergencyPhone" class="text-sm font-bold text-purple-600 truncate">--</p>
-            </div>
-          </div>
-
-          <!-- Patient Name -->
-          <div>
-            <p class="text-xs font-bold text-gray-500 uppercase mb-2">Patient Name</p>
-            <p id="modalPatientName" class="text-lg font-bold text-gray-900">Loading...</p>
-          </div>
-
-          <!-- Allergies -->
-          <div>
-            <p class="text-xs font-bold text-red-600 uppercase mb-2">⚠️ Allergies (Critical)</p>
-            <p id="modalAllergies" class="bg-red-50 border-2 border-red-200 p-3 rounded-lg text-red-900 font-semibold">None reported</p>
-          </div>
-
-          <!-- Medications -->
-          <div>
-            <p class="text-xs font-bold text-gray-500 uppercase mb-2">Current Medications</p>
-            <p id="modalMedications" class="bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900">None reported</p>
-          </div>
-
-          <!-- Health Issues -->
-          <div>
-            <p class="text-xs font-bold text-gray-500 uppercase mb-2">Health Issues</p>
-            <p id="modalHealthIssues" class="bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900">None reported</p>
-          </div>
-
-          <!-- Emergency Contact -->
-          <div>
-            <p class="text-xs font-bold text-gray-500 uppercase mb-2">Emergency Contact</p>
-            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-2">
-              <p class="text-sm"><span class="font-semibold">Name:</span> <span id="modalEmergencyName">--</span></p>
-              <p class="text-sm"><span class="font-semibold">Phone:</span> <span id="modalEmergencyPhoneFull">--</span></p>
-              <p class="text-sm"><span class="font-semibold">Relationship:</span> <span id="modalEmergencyRelationship">--</span></p>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex gap-3 mt-6 pt-4 border-t border-gray-200">
-            <button onclick="callFromModal()" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition flex items-center justify-center gap-2">
-              <span class="material-symbols-outlined">call</span>
-              Call
-            </button>
-            <button onclick="printPatientInfo()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2">
-              <span class="material-symbols-outlined">print</span>
-              Print
-            </button>
-            <button onclick="closeModal()" class="flex-1 bg-gray-300 text-gray-800 py-2 rounded-lg font-bold hover:bg-gray-400 transition">
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Search Section -->
     <div id="searchSection" class="mb-8">
       <div class="glass-card rounded-3xl p-8 shadow-xl text-center">
@@ -164,7 +48,7 @@
         <p class="text-gray-600 mb-6">Enter the patient's QR code ID to access emergency medical information</p>
         
         <div class="max-w-md mx-auto">
-          <div class="flex gap-3">
+          <div class="flex gap-3 mb-3">
             <input 
               type="text" 
               id="qrCodeId" 
@@ -178,6 +62,23 @@
               Access
             </button>
           </div>
+          
+          <!-- Divider -->
+          <div class="flex items-center gap-3 my-4">
+            <div class="flex-1 h-px bg-gray-300"></div>
+            <span class="text-sm text-gray-500 font-medium">OR</span>
+            <div class="flex-1 h-px bg-gray-300"></div>
+          </div>
+          
+          <!-- QR Scan Button -->
+          <button 
+            onclick="scanEmergencyQR()" 
+            class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-blue-700 transition flex items-center justify-center gap-2"
+          >
+            <span class="material-symbols-outlined">qr_code</span>
+            Scan QR Code with Camera
+          </button>
+          
           <p class="text-xs text-gray-500 mt-3">
             <span class="material-symbols-outlined text-sm align-middle">lock</span>
             This access is logged for security and HIPAA compliance
@@ -274,7 +175,11 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="mt-6 flex gap-3">
+        <div class="mt-6 flex gap-3 flex-col lg:flex-row">
+          <button onclick="openPatientLocation()" id="locationButton" class="hidden flex-1 bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined">navigation</span>
+            Open Live Location
+          </button>
           <button onclick="printPatientInfo()" class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-700 transition flex items-center justify-center gap-2">
             <span class="material-symbols-outlined">print</span>
             Print
@@ -302,9 +207,8 @@
   </main>
 
   <script>
-    const API_URL = window.location.origin + '/api';
+    const API_URL = window.location.port === '5000' ? window.location.origin + '/api' : 'http://localhost:5000/api';
     let currentPatientData = null;
-    let isAutoLoadedFromQR = false;
 
     // Check if URL has QR code ID parameter
     window.addEventListener('load', () => {
@@ -312,16 +216,12 @@
       const qrId = urlParams.get('id');
       
       if (qrId) {
-        isAutoLoadedFromQR = true;
         document.getElementById('qrCodeId').value = qrId;
-        searchPatient(() => {
-          // Show as modal when auto-loaded from QR
-          editPatientInfoAsModal(true);
-        });
+        searchPatient();
       }
     });
 
-    async function searchPatient(callback) {
+    async function searchPatient() {
       const qrCodeId = document.getElementById('qrCodeId').value.trim();
       const errorDiv = document.getElementById('searchError');
       
@@ -342,56 +242,11 @@
 
         const patientData = await response.json();
         currentPatientData = patientData;
-        
-        if (isAutoLoadedFromQR) {
-          displayPatientInfoInModal(patientData);
-        } else {
-          displayPatientInfo(patientData);
-        }
-        
-        if (callback) callback();
+        displayPatientInfo(patientData);
       } catch (error) {
         console.error('Error fetching patient:', error);
         errorDiv.textContent = 'Patient not found. Please check the QR Code ID and try again.';
         errorDiv.classList.remove('hidden');
-      }
-    }
-
-    function displayPatientInfoInModal(data) {
-      // Populate modal fields
-      document.getElementById('modalBloodType').textContent = data.bloodGroup || 'Not specified';
-      document.getElementById('modalAge').textContent = data.age || '--';
-      document.getElementById('modalEmergencyPhone').textContent = data.emergencyContact?.phone || '--';
-      document.getElementById('modalPatientName').textContent = data.name || 'Not specified';
-      document.getElementById('modalAllergies').textContent = data.allergies || 'None reported';
-      document.getElementById('modalMedications').textContent = data.medications || 'None reported';
-      document.getElementById('modalHealthIssues').textContent = data.healthIssues || 'None reported';
-      document.getElementById('modalEmergencyName').textContent = data.emergencyContact?.name || 'Not specified';
-      document.getElementById('modalEmergencyPhoneFull').textContent = data.emergencyContact?.phone || 'Not specified';
-      document.getElementById('modalEmergencyRelationship').textContent = data.emergencyContact?.relationship || 'Not specified';
-      
-      // Show modal
-      document.getElementById('qrModal').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeModal() {
-      document.getElementById('qrModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
-    }
-
-    function callFromModal() {
-      const phone = currentPatientData?.emergencyContact?.phone;
-      if (phone) {
-        window.location.href = `tel:${phone}`;
-      } else {
-        alert('No emergency contact phone number available');
-      }
-    }
-
-    function editPatientInfoAsModal(showModal) {
-      if (showModal) {
-        // Already showing modal
       }
     }
 
@@ -411,6 +266,14 @@
       document.getElementById('emergencyName').textContent = data.emergencyContact?.name || 'Not specified';
       document.getElementById('emergencyPhoneFull').textContent = data.emergencyContact?.phone || 'Not specified';
       document.getElementById('emergencyRelationship').textContent = data.emergencyContact?.relationship || 'Not specified';
+
+      if (data.lastLocation?.lat && data.lastLocation?.lng) {
+        document.getElementById('locationButton').classList.remove('hidden');
+        document.getElementById('locationButton').dataset.lat = data.lastLocation.lat;
+        document.getElementById('locationButton').dataset.lng = data.lastLocation.lng;
+      } else {
+        document.getElementById('locationButton').classList.add('hidden');
+      }
       
       // Show patient info section
       document.getElementById('searchSection').classList.add('hidden');
@@ -431,6 +294,19 @@
       } else {
         alert('No emergency contact phone number available');
       }
+    }
+
+    function openPatientLocation() {
+      const locationButton = document.getElementById('locationButton');
+      const lat = locationButton.dataset.lat;
+      const lng = locationButton.dataset.lng;
+      if (!lat || !lng) {
+        alert('Live location is not available for this patient');
+        return;
+      }
+
+      const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+      window.open(mapsUrl, '_blank');
     }
 
     function printPatientInfo() {
@@ -513,6 +389,28 @@
         searchPatient();
       }
     });
+
+    /**
+     * Scan QR Code using camera
+     */
+    function scanEmergencyQR() {
+      initQRScanner(
+        (qrValue) => {
+          // Fill the input field with scanned QR code value
+          document.getElementById('qrCodeId').value = qrValue;
+          // Automatically search for the patient
+          searchPatient();
+        },
+        (error) => {
+          const errorDiv = document.getElementById('searchError');
+          errorDiv.textContent = 'Camera error: ' + error;
+          errorDiv.classList.remove('hidden');
+        }
+      );
+      
+      // Start scanning
+      startQRScanner();
+    }
   </script>
 
 </body>

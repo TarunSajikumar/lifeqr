@@ -44,6 +44,11 @@ const userSchema = new mongoose.Schema({
   },
   qrCode: String,
   qrCodeId: String,
+  lastLocation: {
+    lat: Number,
+    lng: Number,
+    updatedAt: Date
+  },
   
   // Doctor-specific fields
   specialization: String,
@@ -75,8 +80,7 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster queries
-userSchema.index({ email: 1 });
+// Index for faster queries (email index already created by unique: true)
 userSchema.index({ qrCodeId: 1 });
 
 module.exports = mongoose.model("User", userSchema);

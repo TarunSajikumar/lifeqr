@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="qr-scanner.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .font-headline { font-family: 'Manrope', sans-serif; }
@@ -154,6 +156,20 @@
             </div>
           </div>
         </div>
+
+        <!-- AI Implementation Placeholder -->
+        <div class="glass-card rounded-3xl p-6 shadow-xl border-dashed border-purple-200 mt-6">
+          <div class="flex items-start gap-4">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center text-white">
+              <span class="material-symbols-outlined">smart_toy</span>
+            </div>
+            <div>
+              <p class="font-headline text-lg font-bold mb-2">AI Assistant</p>
+              <p class="text-sm text-gray-600">AI-powered clinical intelligence and triage support are coming soon to the Doctor Dashboard.</p>
+              <span class="inline-flex mt-3 items-center gap-2 px-3 py-2 rounded-full bg-purple-50 text-purple-700 text-xs font-semibold">Coming soon</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Profile Section -->
@@ -221,7 +237,7 @@
   </main>
 
   <script>
-    const API_URL = window.location.origin + '/api';
+    const API_URL = window.location.port === '5000' ? window.location.origin + '/api' : 'http://localhost:5000/api';
     let isEditMode = false;
 
     // Check authentication
@@ -362,6 +378,29 @@
         searchPatient();
       }
     });
+
+    /**
+     * Scan QR Code using camera
+     */
+    function scanQRCode() {
+      initQRScanner(
+        (qrValue) => {
+          // Fill the input field with scanned QR code value
+          document.getElementById('patientQrId').value = qrValue;
+          // Automatically search for the patient
+          searchPatient();
+        },
+        (error) => {
+          const errorDiv = document.getElementById('searchError');
+          errorDiv.textContent = 'Camera error: ' + error;
+          errorDiv.classList.remove('hidden');
+          setTimeout(() => errorDiv.classList.add('hidden'), 5000);
+        }
+      );
+      
+      // Start scanning
+      startQRScanner();
+    }
   </script>
 
 </body>

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 require("dotenv").config();
 
 const User = require("./models/User");
@@ -30,7 +30,18 @@ async function createDemoAccount() {
 
     // Hash password
     const hashedPassword = await bcrypt.hash("tarun123", 10);
-    const qrCodeId = uuidv4();
+
+    async function generateShortQrCodeId() {
+      let id;
+      let exists = null;
+      do {
+        id = crypto.randomBytes(4).toString('hex');
+        exists = await User.findOne({ qrCodeId: id });
+      } while (exists);
+      return id;
+    }
+
+    const qrCodeId = await generateShortQrCodeId();
 
     // Create demo user
     const demoUser = await User.create({

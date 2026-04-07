@@ -1,40 +1,102 @@
-# Dependencies
+# Node dependencies
 node_modules/
+package-lock.json
 npm-debug.log
 yarn-error.log
-package-lock.json
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build output
+dist/
+build/
+out/
+.next/
+.nuxt/
+public/
+.cache/
+.parcel-cache/
+storybook-static/
 
 # Environment variables
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.production
-
-# Build files
-dist/
-build/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
 
 # Logs
 logs/
 *.log
-
-# Testing
-coverage/
-.nyc_output/
+*.log.*
+*.sql
+*.sqlite
+*.db
 
 # Temporary files
 tmp/
 temp/
+*.tmp
+*.temp
+*.cache
+*.swp
+*.swo
+*~
+*.orig
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE/editor files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+.project
+.classpath
+.settings/
+
+# Certificates and secrets
+*.pem
+*.key
+*.crt
+*.p12
+.secrets/
+config.local.*
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm caches
+.npm
+.yarn-integrity
 
 # Backend generated uploads
 backend/uploads/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Misc
+*.orig
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+*.dll
+
