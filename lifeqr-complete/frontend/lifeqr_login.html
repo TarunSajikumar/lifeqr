@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | LifeQR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-headline { font-family: 'Manrope', sans-serif; }
+    .hero-gradient { background: linear-gradient(135deg, #6818f4 0%, #4f3bb3 100%); }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-white min-h-screen flex items-center justify-center">
+  
+  <div class="w-full max-w-md px-6">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <a href="index.html" class="inline-flex items-center gap-2 mb-4">
+        <div class="text-[#6818f4]">
+          <svg fill="currentColor" viewBox="0 0 48 48" class="w-10 h-10">
+            <path d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z"></path>
+          </svg>
+        </div>
+        <h1 class="font-headline text-2xl font-extrabold bg-gradient-to-r from-[#6818f4] to-[#5c4dbe] bg-clip-text text-transparent">LifeQR</h1>
+      </a>
+      <h2 class="font-headline text-3xl font-bold mb-2">Welcome Back</h2>
+      <p class="text-gray-600">Sign in to access your account</p>
+    </div>
+
+    <!-- Login Form -->
+    <div class="bg-white rounded-3xl shadow-2xl p-8">
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold mb-2">Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            required 
+            placeholder="your@email.com"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            required 
+            placeholder="••••••••"
+            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+        </div>
+
+        <div class="flex items-center justify-between">
+          <label class="flex items-center">
+            <input type="checkbox" class="rounded text-purple-600 focus:ring-purple-500">
+            <span class="ml-2 text-sm text-gray-600">Remember me</span>
+          </label>
+          <a href="#" class="text-sm text-purple-600 hover:text-purple-700 font-semibold">Forgot password?</a>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"></div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          id="submitBtn"
+          class="w-full hero-gradient text-white px-8 py-4 rounded-xl text-base font-bold shadow-xl hover:shadow-2xl transition"
+        >
+          Sign In
+        </button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <p class="text-sm text-gray-600">
+          Don't have an account? 
+          <a href="lifeqr_signup.html" class="text-purple-600 hover:text-purple-700 font-semibold">Sign Up</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Access -->
+    <div class="mt-8 text-center">
+      <p class="text-xs text-gray-500 mb-4">Quick access for different roles</p>
+      <div class="flex gap-2 justify-center">
+        <span class="px-3 py-1 bg-white rounded-full text-xs border border-gray-200">Patient</span>
+        <span class="px-3 py-1 bg-white rounded-full text-xs border border-gray-200">Doctor</span>
+        <span class="px-3 py-1 bg-white rounded-full text-xs border border-gray-200">Emergency Crew</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin + '/api';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const errorMessage = document.getElementById('errorMessage');
+      
+      errorMessage.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing In...';
+      
+      try {
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Login failed');
+        }
+        
+        // Store token and user info
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('userRole', result.user.role);
+        localStorage.setItem('userName', result.user.name);
+        localStorage.setItem('userId', result.user.id);
+        
+        // Redirect to appropriate dashboard
+        if (result.user.role === 'patient') {
+          window.location.href = 'patient_dashboard.html';
+        } else if (result.user.role === 'doctor') {
+          window.location.href = 'doctor_dashboard.html';
+        } else if (result.user.role === 'crew') {
+          window.location.href = 'CrewAmbulance_dashboard.html';
+        }
+      } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Check if already logged in
+    window.addEventListener('load', () => {
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('userRole');
+      
+      if (token && role) {
+        // Redirect to dashboard
+        if (role === 'patient') {
+          window.location.href = 'patient_dashboard.html';
+        } else if (role === 'doctor') {
+          window.location.href = 'doctor_dashboard.html';
+        } else if (role === 'crew') {
+          window.location.href = 'CrewAmbulance_dashboard.html';
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>

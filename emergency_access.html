@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Access | LifeQR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-headline { font-family: 'Manrope', sans-serif; }
+    .hero-gradient { background: linear-gradient(135deg, #6818f4 0%, #4f3bb3 100%); }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(128, 75, 255, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-red-50 to-white min-h-screen">
+  
+  <!-- Header -->
+  <header class="px-6 py-4 bg-white/70 backdrop-blur-xl border-b border-gray-200/50">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="text-[#6818f4]">
+          <svg fill="currentColor" viewBox="0 0 48 48" class="w-7 h-7">
+            <path d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z"></path>
+          </svg>
+        </div>
+        <h1 class="font-headline text-xl font-extrabold bg-gradient-to-r from-[#6818f4] to-[#5c4dbe] bg-clip-text text-transparent">LifeQR</h1>
+      </div>
+      <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">EMERGENCY ACCESS</span>
+    </div>
+  </header>
+
+  <main class="px-6 py-8 max-w-6xl mx-auto">
+    <!-- Search Section -->
+    <div id="searchSection" class="mb-8">
+      <div class="glass-card rounded-3xl p-8 shadow-xl text-center">
+        <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <span class="material-symbols-outlined text-4xl text-red-600">medical_services</span>
+        </div>
+        <h2 class="font-headline text-3xl font-bold mb-2">Emergency Patient Access</h2>
+        <p class="text-gray-600 mb-6">Enter the patient's QR code ID to access emergency medical information</p>
+        
+        <div class="max-w-md mx-auto">
+          <div class="flex gap-3">
+            <input 
+              type="text" 
+              id="qrCodeId" 
+              placeholder="Enter QR Code ID"
+              class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent text-center text-lg font-mono"
+            >
+            <button 
+              onclick="searchPatient()" 
+              class="bg-red-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-red-700 transition"
+            >
+              Access
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-3">
+            <span class="material-symbols-outlined text-sm align-middle">lock</span>
+            This access is logged for security and HIPAA compliance
+          </p>
+        </div>
+
+        <div id="searchError" class="hidden mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm max-w-md mx-auto"></div>
+      </div>
+    </div>
+
+    <!-- Patient Information Section (Hidden by default) -->
+    <div id="patientInfoSection" class="hidden">
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="font-headline text-2xl font-bold text-red-900">
+            <span class="material-symbols-outlined text-3xl align-middle mr-2">emergency</span>
+            Critical Patient Information
+          </h3>
+          <button onclick="hidePatientInfo()" class="text-gray-600 hover:text-gray-800">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Critical Information Grid -->
+        <div class="grid md:grid-cols-3 gap-4 mb-6">
+          <div class="bg-white rounded-xl p-4 border-l-4 border-red-500">
+            <p class="text-xs text-gray-600 mb-1">Blood Type</p>
+            <p id="bloodType" class="text-2xl font-bold text-red-900">-</p>
+          </div>
+          <div class="bg-white rounded-xl p-4 border-l-4 border-orange-500">
+            <p class="text-xs text-gray-600 mb-1">Age</p>
+            <p id="age" class="text-2xl font-bold text-orange-900">-</p>
+          </div>
+          <div class="bg-white rounded-xl p-4 border-l-4 border-blue-500">
+            <p class="text-xs text-gray-600 mb-1">Emergency Contact</p>
+            <p id="emergencyPhone" class="text-xl font-bold text-blue-900">-</p>
+          </div>
+        </div>
+
+        <!-- Detailed Information -->
+        <div class="space-y-6">
+          <!-- Patient Name -->
+          <div class="bg-white rounded-xl p-6">
+            <h4 class="font-semibold text-lg mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined text-purple-600">person</span>
+              Patient Name
+            </h4>
+            <p id="patientName" class="text-xl font-bold">-</p>
+          </div>
+
+          <!-- Allergies -->
+          <div class="bg-red-50 rounded-xl p-6 border-2 border-red-200">
+            <h4 class="font-semibold text-lg mb-2 flex items-center gap-2 text-red-900">
+              <span class="material-symbols-outlined">warning</span>
+              ALLERGIES - CRITICAL
+            </h4>
+            <p id="allergies" class="text-lg">-</p>
+          </div>
+
+          <!-- Current Medications -->
+          <div class="bg-white rounded-xl p-6">
+            <h4 class="font-semibold text-lg mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-600">medication</span>
+              Current Medications
+            </h4>
+            <p id="medications" class="text-base">-</p>
+          </div>
+
+          <!-- Health Issues -->
+          <div class="bg-white rounded-xl p-6">
+            <h4 class="font-semibold text-lg mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined text-orange-600">health_and_safety</span>
+              Health Issues / Conditions
+            </h4>
+            <p id="healthIssues" class="text-base">-</p>
+          </div>
+
+          <!-- Emergency Contact Details -->
+          <div class="bg-blue-50 rounded-xl p-6 border-2 border-blue-200">
+            <h4 class="font-semibold text-lg mb-3 flex items-center gap-2 text-blue-900">
+              <span class="material-symbols-outlined">contact_phone</span>
+              Emergency Contact
+            </h4>
+            <div class="space-y-2">
+              <p><span class="font-semibold">Name:</span> <span id="emergencyName">-</span></p>
+              <p><span class="font-semibold">Phone:</span> <span id="emergencyPhoneFull">-</span></p>
+              <p><span class="font-semibold">Relationship:</span> <span id="emergencyRelationship">-</span></p>
+            </div>
+            <button onclick="callEmergencyContact()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition flex items-center gap-2">
+              <span class="material-symbols-outlined">call</span>
+              Call Emergency Contact
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex gap-3">
+          <button onclick="printPatientInfo()" class="flex-1 bg-gray-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-700 transition flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined">print</span>
+            Print
+          </button>
+          <button onclick="hidePatientInfo()" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-300 transition">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-8 glass-card rounded-2xl p-6">
+      <h4 class="font-semibold mb-2 flex items-center gap-2">
+        <span class="material-symbols-outlined text-blue-600">info</span>
+        For Emergency Responders
+      </h4>
+      <ul class="text-sm text-gray-600 space-y-1">
+        <li>• This system provides instant access to critical medical information</li>
+        <li>• All access is logged and HIPAA compliant</li>
+        <li>• Contact information is provided for family notification</li>
+        <li>• Use this information to provide appropriate emergency care</li>
+      </ul>
+    </div>
+  </main>
+
+  <script>
+    const API_URL = window.location.origin + '/api';
+    let currentPatientData = null;
+
+    // Check if URL has QR code ID parameter
+    window.addEventListener('load', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qrId = urlParams.get('id');
+      
+      if (qrId) {
+        document.getElementById('qrCodeId').value = qrId;
+        searchPatient();
+      }
+    });
+
+    async function searchPatient() {
+      const qrCodeId = document.getElementById('qrCodeId').value.trim();
+      const errorDiv = document.getElementById('searchError');
+      
+      errorDiv.classList.add('hidden');
+      
+      if (!qrCodeId) {
+        errorDiv.textContent = 'Please enter a QR Code ID';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/patient/profile/${qrCodeId}`);
+        
+        if (!response.ok) {
+          throw new Error('Patient not found');
+        }
+
+        const patientData = await response.json();
+        currentPatientData = patientData;
+        displayPatientInfo(patientData);
+      } catch (error) {
+        console.error('Error fetching patient:', error);
+        errorDiv.textContent = 'Patient not found. Please check the QR Code ID and try again.';
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    function displayPatientInfo(data) {
+      // Populate critical info
+      document.getElementById('bloodType').textContent = data.bloodGroup || 'Not specified';
+      document.getElementById('age').textContent = data.age || 'Not specified';
+      document.getElementById('emergencyPhone').textContent = data.emergencyContact?.phone || 'Not specified';
+      
+      // Populate detailed info
+      document.getElementById('patientName').textContent = data.name || 'Not specified';
+      document.getElementById('allergies').textContent = data.allergies || 'None reported';
+      document.getElementById('medications').textContent = data.medications || 'None reported';
+      document.getElementById('healthIssues').textContent = data.healthIssues || 'None reported';
+      
+      // Emergency contact
+      document.getElementById('emergencyName').textContent = data.emergencyContact?.name || 'Not specified';
+      document.getElementById('emergencyPhoneFull').textContent = data.emergencyContact?.phone || 'Not specified';
+      document.getElementById('emergencyRelationship').textContent = data.emergencyContact?.relationship || 'Not specified';
+      
+      // Show patient info section
+      document.getElementById('searchSection').classList.add('hidden');
+      document.getElementById('patientInfoSection').classList.remove('hidden');
+    }
+
+    function hidePatientInfo() {
+      document.getElementById('searchSection').classList.remove('hidden');
+      document.getElementById('patientInfoSection').classList.add('hidden');
+      document.getElementById('qrCodeId').value = '';
+      currentPatientData = null;
+    }
+
+    function callEmergencyContact() {
+      const phone = currentPatientData?.emergencyContact?.phone;
+      if (phone) {
+        window.location.href = `tel:${phone}`;
+      } else {
+        alert('No emergency contact phone number available');
+      }
+    }
+
+    function printPatientInfo() {
+      if (!currentPatientData) return;
+      
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Emergency Patient Information</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { color: #dc2626; border-bottom: 3px solid #dc2626; padding-bottom: 10px; }
+              h2 { color: #6818f4; margin-top: 20px; }
+              .critical { background: #fee; border: 2px solid #dc2626; padding: 15px; margin: 10px 0; }
+              .info-box { background: #f9f9f9; padding: 15px; margin: 10px 0; border-left: 4px solid #6818f4; }
+              .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0; }
+              .stat { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+            </style>
+          </head>
+          <body>
+            <h1>🚑 EMERGENCY PATIENT INFORMATION</h1>
+            
+            <div class="grid">
+              <div class="stat">
+                <strong>Blood Type:</strong><br>
+                <span style="font-size: 24px; color: #dc2626;">${currentPatientData.bloodGroup || 'Not specified'}</span>
+              </div>
+              <div class="stat">
+                <strong>Age:</strong><br>
+                <span style="font-size: 24px;">${currentPatientData.age || 'Not specified'}</span>
+              </div>
+              <div class="stat">
+                <strong>Emergency Phone:</strong><br>
+                <span style="font-size: 18px; color: #2563eb;">${currentPatientData.emergencyContact?.phone || 'Not specified'}</span>
+              </div>
+            </div>
+
+            <h2>Patient Name</h2>
+            <div class="info-box">
+              <strong>${currentPatientData.name || 'Not specified'}</strong>
+            </div>
+
+            <h2>⚠️ ALLERGIES - CRITICAL</h2>
+            <div class="critical">
+              <strong>${currentPatientData.allergies || 'None reported'}</strong>
+            </div>
+
+            <h2>Current Medications</h2>
+            <div class="info-box">
+              ${currentPatientData.medications || 'None reported'}
+            </div>
+
+            <h2>Health Issues / Conditions</h2>
+            <div class="info-box">
+              ${currentPatientData.healthIssues || 'None reported'}
+            </div>
+
+            <h2>Emergency Contact</h2>
+            <div class="info-box">
+              <strong>Name:</strong> ${currentPatientData.emergencyContact?.name || 'Not specified'}<br>
+              <strong>Phone:</strong> ${currentPatientData.emergencyContact?.phone || 'Not specified'}<br>
+              <strong>Relationship:</strong> ${currentPatientData.emergencyContact?.relationship || 'Not specified'}
+            </div>
+
+            <p style="margin-top: 30px; font-size: 12px; color: #666;">
+              Printed: ${new Date().toLocaleString()}<br>
+              LifeQR Emergency Access System - HIPAA Compliant
+            </p>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+
+    // Allow Enter key to search
+    document.getElementById('qrCodeId').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        searchPatient();
+      }
+    });
+  </script>
+
+</body>
+</html>
