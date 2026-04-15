@@ -1,0 +1,17 @@
+{
+  "name": "lifeqr",
+  "version": "1.0.0",
+  "description": "Emergency Medical QR Code System",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "dev": "cd backend && nodemon server.js",
+    "install-all": "cd backend && npm install"
+  },
+  "keywords": ["medical", "emergency", "qr-code", "healthcare"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
