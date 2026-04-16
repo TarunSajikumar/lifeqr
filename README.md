@@ -2,20 +2,20 @@
 
 ## 📋 Overview
 
-**LifeQR** is a life-saving emergency medical information system that provides instant access to critical health data through QR codes. In emergencies, when patients can't communicate, LifeQR gives emergency responders immediate access to complete medical profiles—including allergies, medications, blood type, and emergency contacts—with a simple scan.
+**LifeQR** is a life-saving emergency medical information system that puts critical health data at emergency responders' fingertips. In critical moments, every second counts. When a patient is unable to communicate, LifeQR provides instant access to their complete medical profile—allergies, medications, blood type, emergency contacts, and more—through a simple QR code scan.
 
 ### 🎯 The Problem We Solve
-- Critical medical information is often unavailable in emergencies
-- Communication barriers prevent accurate patient history
-- Delays in accessing medical records can be life-threatening
-- Emergency responders work with incomplete information
+- ❌ Critical medical information is often unavailable in emergencies
+- ❌ Communication barriers prevent accurate patient history
+- ❌ Delays in accessing medical records can be life-threatening
+- ❌ Emergency responders work with incomplete information
 
 ### ✅ The LifeQR Solution
-- **Instant access** to complete medical profiles
-- **One-second scanning** instead of minutes of searching
-- **Comprehensive data** from allergies to emergency contacts
-- **Patient control** over who can see their information
-- **Completely free** to use and deploy
+- ✅ **Instant access** to complete medical profiles
+- ✅ **One-second scanning** instead of minutes of searching
+- ✅ **Comprehensive data** from allergies to emergency contacts
+- ✅ **Patient control** over who can see their information
+- ✅ **Completely free** to use and deploy
 
 ## ✨ Key Features
 
