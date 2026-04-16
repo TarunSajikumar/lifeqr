@@ -1337,15 +1337,15 @@
             </div>
           </div>
 
-          <script>
-            window.addEventListener('load', function() {
-              setTimeout(() => window.print(), 500);
-            });
-          </script>
         </body>
         </html>
       `);
       printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
     }
 
 
