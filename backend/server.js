@@ -11,35 +11,8 @@ require("dotenv").config();
 const app = express();
 
 // Middleware
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  // HTTP origins
-  'http://localhost:5000',
-  'http://127.0.0.1:5000',
-  'http://localhost:5500',
-  'http://127.0.0.1:5500',
-  'http://192.168.100.82:5000',
-  'http://10.226.208.114:5000',
-  // HTTPS origins (for camera access)
-  'https://localhost:5000',
-  'https://127.0.0.1:5000',
-  'https://localhost:5500',
-  'https://127.0.0.1:5500',
-  'https://192.168.100.82:5000',
-  'https://10.226.208.114:5000'
-].filter(Boolean);
-
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) {
-      // Allow requests from non-browser clients or file:// local pages
-      return callback(null, true);
-    }
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error(`CORS policy violation: origin ${origin} not allowed`));
-  },
+  origin: true,
   credentials: true
 }));
 app.use(express.json());
@@ -63,6 +36,15 @@ app.get("/api/health", (req, res) => {
     message: "LifeQR backend is running 🚑",
     timestamp: new Date().toISOString()
   });
+});
+
+// API error handler to return JSON instead of HTML
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err);
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+  next(err);
 });
 
 // Serve frontend for all other routes (SPA support)
