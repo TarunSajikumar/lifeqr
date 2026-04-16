@@ -6,9 +6,11 @@ const path = require("path");
 const fs = require("fs");
 const https = require("https");
 const http = require("http");
+const { getFrontendUrl, isSecureUrl } = require("./utils/frontendUrl");
 require("dotenv").config();
 
 const app = express();
+app.set('trust proxy', true);
 
 // Middleware
 app.use(cors({
@@ -83,17 +85,17 @@ const startServer = async () => {
     console.log("✅ MongoDB Connected Successfully");
 
     // Start server - listen on all network interfaces
-    const phoneIp = process.env.FRONTEND_URL?.split('://')[1]?.split(':')[0] || '10.226.208.114';
-    
-    // Check if HTTPS certificates exist
+    const frontendUrl = getFrontendUrl();
+    const publicHttpsAvailable = isSecureUrl(frontendUrl);
+
+    // Check if HTTPS certificates exist locally
     const certPath = path.join(__dirname, 'certs', 'server.crt');
     const keyPath = path.join(__dirname, 'certs', 'server.key');
     const useHttps = fs.existsSync(certPath) && fs.existsSync(keyPath);
-    
+
     let server;
-    
+
     if (useHttps) {
-      // Use HTTPS for camera access
       const options = {
         cert: fs.readFileSync(certPath),
         key: fs.readFileSync(keyPath)
@@ -103,24 +105,28 @@ const startServer = async () => {
         console.log(`🚀 HTTPS Server running on port ${PORT}`);
         console.log(`\n🔒 SECURE CONNECTION (HTTPS)`);
         console.log(`📍 Localhost: https://localhost:${PORT}`);
-        console.log(`📱 Phone IP: https://${phoneIp}:${PORT}`);
-        console.log(`🌐 Emergency Access (HTTPS): https://${phoneIp}:${PORT}/emergency_access.html`);
+        console.log(`🌐 Public URL: ${frontendUrl}`);
         console.log(`\n📱 Camera access is now enabled on all devices!`);
         console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
         console.log(`\n⚠️  Note: You may see a security warning on first visit - this is normal for self-signed certificates. Click "Continue" or "Accept Risk".`);
       });
+    } else if (publicHttpsAvailable) {
+      server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 HTTP Server running on port ${PORT} behind HTTPS proxy`);
+        console.log(`\n🌐 Public URL: ${frontendUrl}`);
+        console.log(`📱 Camera access should work when the app is opened through the public HTTPS URL above.`);
+        console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
     } else {
-      // Fall back to HTTP (camera won't work on mobile)
       server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 HTTP Server running on port ${PORT}`);
         console.log(`\n⚠️  WARNING: Using HTTP - Camera access will NOT work on mobile devices`);
         console.log(`📍 Localhost: http://localhost:${PORT}`);
-        console.log(`📱 Phone IP: http://${phoneIp}:${PORT}`);
         console.log(`\n✅ TO FIX CAMERA ACCESS:`);
         console.log(`   1. Stop this server (Ctrl+C)`);
         console.log(`   2. Run: node generate-cert.js`);
         console.log(`   3. Run: npm start (again)`);
-        console.log(`4. Access via HTTPS: https://${phoneIp}:${PORT}/emergency_access.html`);
+        console.log(`4. Access via HTTPS: ${frontendUrl}/emergency_access.html`);
         console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
       });
     }
@@ -142,8 +148,8 @@ const startServer = async () => {
 
     console.log("\n⚠️  Attempting to start server without MongoDB connection for development only...");
     
-    // Start server anyway for frontend access
-    const phoneIp = process.env.FRONTEND_URL?.split('://')[1]?.split(':')[0] || '10.226.208.114';
+    const frontendUrl = getFrontendUrl();
+    const publicHttpsAvailable = isSecureUrl(frontendUrl);
     
     // Check if HTTPS certificates exist
     const certPath = path.join(__dirname, 'certs', 'server.crt');
@@ -161,7 +167,14 @@ const startServer = async () => {
       server.listen(PORT, '0.0.0.0', () => {
         console.log(`\n⚠️  SERVER RUNNING WITHOUT DATABASE (HTTPS)`);
         console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📱 Phone HTTPS: https://${phoneIp}:${PORT}/emergency_access.html`);
+        console.log(`🌐 Public URL: ${frontendUrl}`);
+        console.log(`\n💡 Note: Database features won\'t work until MongoDB is connected`);
+      });
+    } else if (publicHttpsAvailable) {
+      server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`\n⚠️  SERVER RUNNING WITHOUT DATABASE (HTTP)`);
+        console.log(`🚀 Server running on port ${PORT} behind HTTPS proxy`);
+        console.log(`🌐 Public URL: ${frontendUrl}`);
         console.log(`\n💡 Note: Database features won\'t work until MongoDB is connected`);
       });
     } else {
@@ -169,7 +182,6 @@ const startServer = async () => {
         console.log(`\n⚠️  SERVER RUNNING WITHOUT DATABASE (HTTP)`);
         console.log(`🚀 Server running on port ${PORT}`);
         console.log(`📍 Localhost: http://localhost:${PORT}`);
-        console.log(`📱 Phone IP: http://${phoneIp}:${PORT}`);
         console.log(`\n💡 Note: Database features won\'t work until MongoDB is connected`);
         console.log(`🔒 For camera access on phone, generate HTTPS certificates:`);
         console.log(`   node generate-cert.js && npm start`);

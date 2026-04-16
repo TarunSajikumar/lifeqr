@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const QRCode = require('qrcode');
 const User = require('../models/User');
+const { getFrontendUrl } = require('../utils/frontendUrl');
 
 const router = express.Router();
 
@@ -349,7 +350,7 @@ router.put('/update', authenticateToken, async (req, res) => {
       }
 
       // Regenerate QR code with updated data
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+      const frontendUrl = getFrontendUrl();
       const qrUrl = `${frontendUrl}/emergency_access.html?id=${user.qrCodeId}`;
 
       const qrCodeDataURL = await QRCode.toDataURL(qrUrl, {
@@ -431,7 +432,8 @@ router.post('/regenerate-qr', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Patient not found' });
     }
 
-    const qrUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/emergency_access.html?id=${user.qrCodeId}`;
+    const frontendUrl = getFrontendUrl();
+    const qrUrl = `${frontendUrl}/emergency_access.html?id=${user.qrCodeId}`;
     
     const qrCodeDataURL = await QRCode.toDataURL(qrUrl, {
       errorCorrectionLevel: 'H',

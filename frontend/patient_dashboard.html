@@ -23,6 +23,13 @@
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-white min-h-screen">
   
+  <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-50 hidden items-center justify-center">
+    <div class="text-center">
+      <div class="animate-spin border-4 border-purple-300 border-t-purple-700 rounded-full w-16 h-16 mx-auto mb-4"></div>
+      <p class="text-purple-700 font-semibold">Loading your dashboard...</p>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="px-6 py-4 bg-white/70 backdrop-blur-xl border-b border-gray-200/50">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
@@ -312,21 +319,33 @@
 
     // Check authentication
     window.addEventListener('load', async () => {
+      showLoading();
       const token = localStorage.getItem('token');
       if (!token) {
+        hideLoading();
         window.location.href = 'lifeqr_login.html';
         return;
       }
 
       const user = await verifyToken();
       if (!user || user.role !== 'patient') {
+        hideLoading();
         localStorage.clear();
         window.location.href = 'lifeqr_login.html';
         return;
       }
 
       document.getElementById('userName').textContent = user.name || localStorage.getItem('userName') || 'User';
-      await loadActivity();
+      try {
+        await loadProfile();
+        await loadReports();
+        await loadActivity();
+      } catch (error) {
+        console.error('Dashboard load error:', error);
+        showError('Unable to load dashboard data. Please refresh the page.');
+      } finally {
+        hideLoading();
+      }
     });
 
     async function loadProfile() {
@@ -1335,6 +1354,16 @@
       successDiv.textContent = message;
       successDiv.classList.remove('hidden');
       setTimeout(() => successDiv.classList.add('hidden'), 5000);
+    }
+
+    function showLoading() {
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      document.getElementById('loadingOverlay').classList.add('flex');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+      document.getElementById('loadingOverlay').classList.remove('flex');
     }
 
     function showError(message) {

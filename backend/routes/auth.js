@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../models/User');
+const { getFrontendUrl } = require('../utils/frontendUrl');
 
 const router = express.Router();
 
@@ -123,7 +124,7 @@ router.post('/register', async (req, res) => {
       userData.qrCodeId = qrCodeId;
       
       // Generate QR code with URL that links to emergency access page
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+      const frontendUrl = getFrontendUrl();
       const qrUrl = `${frontendUrl}/emergency_access.html?id=${qrCodeId}`;
       
       const qrCodeDataURL = await QRCode.toDataURL(qrUrl, {

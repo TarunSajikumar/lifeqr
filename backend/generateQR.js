@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const QRCode = require('qrcode');
 const User = require("./models/User");
+const { getFrontendUrl } = require('./utils/frontendUrl');
 require("dotenv").config();
 
 async function generateQRForDemoAccount() {
@@ -25,7 +26,7 @@ async function generateQRForDemoAccount() {
     }
 
     // Generate QR code with URL that points to emergency access page
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+    const frontendUrl = getFrontendUrl();
     const qrUrl = `${frontendUrl}/emergency_access.html?id=${user.qrCodeId}`;
 
     console.log("📝 Generating QR code...");
