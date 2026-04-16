@@ -53,6 +53,7 @@ router.post('/register', async (req, res) => {
       email, 
       password, 
       role,
+      gender,
       // Patient fields
       age,
       bloodGroup,
@@ -96,12 +97,14 @@ router.post('/register', async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      plainPassword: password,
       role,
+      gender,
       phone,
       address,
       city,
       state
-    };
+    }; 
 
     // Add role-specific data
     if (role === 'patient') {
@@ -167,6 +170,7 @@ router.post('/register', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        gender: user.gender,
         qrCode: user.qrCode,
         qrCodeId: user.qrCodeId
       }
@@ -218,6 +222,7 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        gender: user.gender,
         qrCode: user.qrCode,
         qrCodeId: user.qrCodeId
       }
@@ -238,7 +243,7 @@ router.get('/verify', async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select('-password -plainPassword');
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -251,6 +256,7 @@ router.get('/verify', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        gender: user.gender,
         qrCode: user.qrCode,
         qrCodeId: user.qrCodeId
       }

@@ -289,8 +289,13 @@
             </div>
 
             <div>
+              <label class="block text-sm font-semibold mb-2">Gender</label>
+              <input type="text" id="gender" disabled class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-sm">
+            </div>
+
+            <div>
               <label class="block text-sm font-semibold mb-2">Vehicle Number</label>
-              <input type="text" id="vehicleNumber" disabled placeholder="e.g., AMB-001" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-sm">
+              <input type="text" id="vehicleNumber" disabled class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-sm">
             </div>
 
             <div>
@@ -413,6 +418,7 @@
         
         document.getElementById('name').value = userData.name || '';
         document.getElementById('email').value = userData.email || '';
+        document.getElementById('gender').value = userData.gender ? userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1) : '';
         document.getElementById('vehicleNumber').value = userData.vehicleNumber || '';
         document.getElementById('crewTypeSelect').value = userData.crewType || '';
         document.getElementById('station').value = userData.station || '';
@@ -452,6 +458,7 @@
         const token = localStorage.getItem('token');
         const formData = {
           name: document.getElementById('name').value,
+          gender: document.getElementById('gender').value.toLowerCase(),
           vehicleNumber: document.getElementById('vehicleNumber').value,
           crewType: document.getElementById('crewTypeSelect').value,
           station: document.getElementById('station').value,

@@ -17,11 +17,21 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  plainPassword: {
+    type: String
+  },
   role: {
     type: String,
     required: true,
     enum: ['patient', 'doctor', 'crew'],
     default: 'patient'
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', ''],
+    lowercase: true,
+    trim: true,
+    default: ''
   },
   
   // Patient-specific fields

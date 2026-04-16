@@ -113,6 +113,10 @@
             <p class="text-xs text-gray-600 mb-1">Blood Type</p>
             <p id="bloodType" class="text-2xl font-bold text-red-900">-</p>
           </div>
+          <div class="bg-white rounded-xl p-4 border-l-4 border-purple-500">
+            <p class="text-xs text-gray-600 mb-1">Gender</p>
+            <p id="gender" class="text-2xl font-bold text-purple-900">-</p>
+          </div>
           <div class="bg-white rounded-xl p-4 border-l-4 border-orange-500">
             <p class="text-xs text-gray-600 mb-1">Age</p>
             <p id="age" class="text-2xl font-bold text-orange-900">-</p>
@@ -277,6 +281,7 @@
     function displayPatientInfo(data) {
       // Populate critical info
       document.getElementById('bloodType').textContent = data.bloodGroup || 'Not specified';
+      document.getElementById('gender').textContent = data.gender ? data.gender.charAt(0).toUpperCase() + data.gender.slice(1) : 'Not specified';
       document.getElementById('age').textContent = data.age || 'Not specified';
       document.getElementById('emergencyPhone').textContent = data.emergencyContact?.phone || 'Not specified';
       
@@ -364,8 +369,10 @@
                 <strong>Age:</strong><br>
                 <span style="font-size: 24px;">${currentPatientData.age || 'Not specified'}</span>
               </div>
-              <div class="stat">
-                <strong>Emergency Phone:</strong><br>
+              <div class="stat">                <strong>Gender:</strong><br>
+                <span style="font-size: 18px; color: #6d28d9;">${currentPatientData.gender ? currentPatientData.gender.charAt(0).toUpperCase() + currentPatientData.gender.slice(1) : 'Not specified'}</span>
+              </div>
+              <div class="stat">                <strong>Emergency Phone:</strong><br>
                 <span style="font-size: 18px; color: #2563eb;">${currentPatientData.emergencyContact?.phone || 'Not specified'}</span>
               </div>
             </div>

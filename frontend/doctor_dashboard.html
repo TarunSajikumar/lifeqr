@@ -128,7 +128,11 @@
             </div>
           </div>
 
-          <div class="grid md:grid-cols-2 gap-4 mb-4">
+          <div class="grid md:grid-cols-3 gap-4 mb-4">
+            <div class="space-y-2">
+              <p class="text-sm text-gray-500">Gender</p>
+              <p id="patientResultGender" class="font-semibold"></p>
+            </div>
             <div class="space-y-2">
               <p class="text-sm text-gray-500">Age</p>
               <p id="patientResultAge" class="font-semibold"></p>
@@ -241,6 +245,11 @@
             <div>
               <label class="block text-sm font-semibold mb-2">Email</label>
               <input type="email" id="email" disabled class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-sm">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-2">Gender</label>
+              <input type="text" id="gender" disabled class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-sm">
             </div>
 
             <div>
@@ -363,6 +372,7 @@
         
         document.getElementById('name').value = userData.name || '';
         document.getElementById('email').value = userData.email || '';
+        document.getElementById('gender').value = userData.gender ? userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1) : '';
         document.getElementById('specialization').value = userData.specialization || '';
         document.getElementById('licenseNumber').value = userData.licenseNumber || '';
         document.getElementById('hospital').value = userData.hospital || '';
@@ -400,6 +410,7 @@
         const token = localStorage.getItem('token');
         const formData = {
           name: document.getElementById('name').value,
+          gender: document.getElementById('gender').value.toLowerCase(),
           specialization: document.getElementById('specialization').value,
           licenseNumber: document.getElementById('licenseNumber').value,
           hospital: document.getElementById('hospital').value,
@@ -493,6 +504,7 @@
       document.getElementById('patientResult').classList.remove('hidden');
       document.getElementById('patientResultName').textContent = data.name || 'Unknown Patient';
       document.getElementById('patientResultQr').textContent = qrId;
+      document.getElementById('patientResultGender').textContent = data.gender ? data.gender.charAt(0).toUpperCase() + data.gender.slice(1) : 'Not specified';
       document.getElementById('patientResultBlood').textContent = data.bloodGroup || 'Not specified';
       document.getElementById('patientResultAge').textContent = data.age || 'Not specified';
       document.getElementById('patientResultContact').textContent = data.emergencyContact?.phone || 'Not specified';

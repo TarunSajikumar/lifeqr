@@ -38,7 +38,7 @@ router.get('/profile/:qrCodeId', async (req, res) => {
   try {
     const { qrCodeId } = req.params;
     
-    const patient = await User.findOne({ qrCodeId, role: 'patient' }).select('-password -__v');
+    const patient = await User.findOne({ qrCodeId, role: 'patient' }).select('-password -plainPassword -__v');
     
     if (!patient) {
       return res.status(404).json({ error: 'Patient not found' });
@@ -48,6 +48,7 @@ router.get('/profile/:qrCodeId', async (req, res) => {
       return res.json({
         qrCodeId: patient.qrCodeId,
         name: patient.name,
+        gender: patient.gender,
         age: patient.age,
         bloodGroup: patient.bloodGroup,
         emergencyContact: patient.emergencyContact,
@@ -61,6 +62,7 @@ router.get('/profile/:qrCodeId', async (req, res) => {
     res.json({
       qrCodeId: patient.qrCodeId,
       name: patient.name,
+      gender: patient.gender,
       age: patient.age,
       bloodGroup: patient.bloodGroup,
       allergies: patient.allergies,
@@ -84,7 +86,7 @@ router.get('/doctor/patient/:qrCodeId', authenticateToken, async (req, res) => {
 
     const { qrCodeId } = req.params;
     const doctorId = req.user.userId;
-    const patient = await User.findOne({ qrCodeId, role: 'patient' }).select('-password -__v');
+    const patient = await User.findOne({ qrCodeId, role: 'patient' }).select('-password -plainPassword -__v');
 
     if (!patient) {
       return res.status(404).json({ error: 'Patient not found' });
@@ -96,6 +98,7 @@ router.get('/doctor/patient/:qrCodeId', authenticateToken, async (req, res) => {
     const response = {
       qrCodeId: patient.qrCodeId,
       name: patient.name,
+      gender: patient.gender,
       age: patient.age,
       bloodGroup: patient.bloodGroup,
       emergencyContact: patient.emergencyContact,
@@ -106,7 +109,7 @@ router.get('/doctor/patient/:qrCodeId', authenticateToken, async (req, res) => {
       reports: canViewSensitive ? patient.reports || [] : [],
       activities: canViewSensitive ? patient.activities || [] : [],
       sosAlerts: canViewSensitive ? patient.sosAlerts || [] : []
-    };
+    }; 
 
     if (!canViewSensitive) {
       response.privateProfile = true;
@@ -154,7 +157,7 @@ router.get('/doctor/patients', authenticateToken, async (req, res) => {
 // Get authenticated user's full profile
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password -__v');
+    const user = await User.findById(req.user.userId).select('-password -plainPassword -__v');
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -301,6 +304,7 @@ router.put('/update', authenticateToken, async (req, res) => {
   try {
     const {
       name,
+      gender,
       age,
       bloodGroup,
       healthIssues,
@@ -329,6 +333,7 @@ router.put('/update', authenticateToken, async (req, res) => {
 
     // Update common fields
     if (name) user.name = name;
+    if (gender !== undefined) user.gender = gender;
     if (phone) user.phone = phone;
     if (address) user.address = address;
     if (city) user.city = city;
@@ -382,6 +387,7 @@ router.put('/update', authenticateToken, async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        gender: user.gender,
         qrCode: user.qrCode
       }
     });
