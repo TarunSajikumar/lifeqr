@@ -233,7 +233,7 @@ ls node_modules/ | wc -l
 ✅ MONGO_URI=mongodb://localhost:27017/lifeqr
    └─ Connection string valid and tested
 
-✅ JWT_SECRET=demo-secret-key-tarun-demo-2026
+✅ JWT_SECRET=your-random-secret-key
    └─ Secret configured and active
 
 ✅ PORT=5000
@@ -275,7 +275,7 @@ ls node_modules/ | wc -l
 #### JWT Token Details
 ```
 ✅ Algorithm: HS256
-✅ Secret: demo-secret-key-tarun-demo-2026
+✅ Secret: your-random-secret-key
 ✅ Expiry: 7 days
 ✅ Claims: { userId, role }
 ✅ Encoding: Base64 URL-safe

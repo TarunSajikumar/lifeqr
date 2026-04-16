@@ -123,7 +123,7 @@ MONGO_URI=mongodb+srv://lifeqr_user:LifeQR@Secure2024@cluster0.xxxxx.mongodb.net
 MONGO_URI=mongodb+srv://lifeqr_user:LifeQR@Secure2024@cluster0.xxxxx.mongodb.net/lifeqr?retryWrites=true&w=majority
 
 # JWT Secret
-JWT_SECRET=demo-secret-key-tarun-demo-2026
+JWT_SECRET=your-random-secret-key
 
 # Server Port
 PORT=5000

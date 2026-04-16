@@ -270,7 +270,7 @@ curl http://localhost:5000/api/health
 ### Environment Variables (`backend/.env`)
 ```env
 MONGO_URI=mongodb://localhost:27017/lifeqr
-JWT_SECRET=demo-secret-key-tarun-demo-2026
+JWT_SECRET=your-random-secret-key
 PORT=5000
 FRONTEND_URL=http://192.168.100.82:5000
 NODE_ENV=development

@@ -193,7 +193,7 @@ Located in: `backend/.env`
 MONGO_URI=mongodb://localhost:27017/lifeqr
 
 # JWT Secret
-JWT_SECRET=demo-secret-key-tarun-demo-2026
+✅ JWT_SECRET=your-random-secret-key
 
 # Server Port
 PORT=5000

@@ -56,11 +56,14 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    // Check if MongoDB URI is provided
+    // Fail fast in production if MongoDB URI is missing
     if (!process.env.MONGO_URI) {
-      console.warn('⚠️  MONGO_URI not found in .env file');
-      console.log('📝 Using default MongoDB connection string for development');
-      console.log('💡 For production, please set MONGO_URI in your .env file');
+      const message = 'MONGO_URI is required in production. Set it in Render environment variables.';
+      console.error(`❌ ${message}`);
+      if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+      }
+      console.warn('⚠️  MONGO_URI not found in .env file. Using local MongoDB for development only.');
     }
 
     const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/lifeqr';
@@ -131,8 +134,13 @@ const startServer = async () => {
       process.exit(1);
     });
   } catch (err) {
-    console.error("❌ Server failed to start:", err.message);
-    console.log("\n⚠️  Attempting to start server without MongoDB connection...");
+    console.error("❌ Server failed to start:", err);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ Exiting because MongoDB connection failed in production.');
+      process.exit(1);
+    }
+
+    console.log("\n⚠️  Attempting to start server without MongoDB connection for development only...");
     
     // Start server anyway for frontend access
     const phoneIp = process.env.FRONTEND_URL?.split('://')[1]?.split(':')[0] || '10.226.208.114';
