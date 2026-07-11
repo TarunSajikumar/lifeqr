@@ -97,7 +97,6 @@ router.post('/register', async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      plainPassword: password,
       role,
       gender,
       phone,
@@ -156,9 +155,12 @@ router.post('/register', async (req, res) => {
     const user = await User.create(userData);
 
     // Generate JWT token
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
     const token = jwt.sign(
       { userId: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'your-secret-key-change-this',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -208,9 +210,12 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate JWT token
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
     const token = jwt.sign(
       { userId: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'your-secret-key-change-this',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -242,7 +247,10 @@ router.get('/verify', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password -plainPassword');
     
     if (!user) {

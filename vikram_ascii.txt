@@ -1,0 +1,35 @@
+Sambhram Institute of Technology
+AI SURVEILLANCE AND SOS RESPONSE SYSTEM
+Project Title:AI SURVEILLANCE AND SOS RESPONSE SYSTEM,Batch No:B31
+Guide Name:Prof. Mallamma C G,
+Batch Members Names with USN
+1. Vansh Srivastava - 1ST23CS204
+2. Vikram Kumar - 1ST23CS216
+3. Vikasa Rama H R - 1ST23CS215
+4. Shreyas S - 1ST23CS175
+WORKS IDENTIFIED (EACH MEMBER 2)
+1. YOLOv8n Violence Detection with Motion Analysis
+2. YOLOv5s Fire Detection with Non-Max Suppression
+3. Sustained Threat Detection & Evidence Capture
+4. A* Pathfinding on Walkability Grid
+5. Douglas-Peucker Path Smoothing
+6. AI Floor Plan Analysis using Gemini Vision
+7. Voice Emergency Classification
+8. Real-Time Broadcast and SMS Alert Dispatch
+DATA FLOW DIAGRAM (ONE DIAGRAM FOR ENTIRE PROJECT)
+[ Camera Input (OpenCV) ]
+?
+?????????????????????
+? ?
+[ Violence Detector ] [ Fire Detector ]
+(YOLOv8n) (YOLOv5s)
+? ?
+?????????????????????
+?
+[ Sustained Detection Tracker ]
+(7s)
+?
+?????????????????????
+? ?
+[ Evidence Capture ] [ CrisisGuard API ]
+(Snapshot + Video) (Flask Dashboard)

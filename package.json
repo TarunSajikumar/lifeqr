@@ -6,12 +6,21 @@
   "scripts": {
     "start": "cd backend && node server.js",
     "dev": "cd backend && nodemon server.js",
-    "install-all": "cd backend && npm install"
+    "install-all": "cd backend && npm install",
+    "build-css": "npx tailwindcss -i ./frontend/src/input.css -o ./frontend/dist/output.css --minify"
   },
-  "keywords": ["medical", "emergency", "qr-code", "healthcare"],
+  "keywords": [
+    "medical",
+    "emergency",
+    "qr-code",
+    "healthcare"
+  ],
   "author": "",
   "license": "ISC",
   "engines": {
     "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
   }
 }

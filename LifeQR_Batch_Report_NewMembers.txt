@@ -1,0 +1,367 @@
+Sambhram Institute of Technology
+LIFEQR — EMERGENCY MEDICAL QR CODE SYSTEM
+Project Title: LifeQR — Emergency Medical QR Code System, Batch No: [Batch No]
+Guide Name: Prof. [Guide Name],
+Batch Members Names with USN
+1. SUJAL R - 1ST23CS190
+2. SHREYAS GOWDA C - 1ST23CS173
+3. SUJIT M REDDY - 1ST23CS192
+4. TARUN S ACHARY - 1ST23CS199
+WORKS IDENTIFIED (EACH MEMBER 2)
+1. Patient Registration Module
+2. QR Code Generation Module
+3. Emergency Access & QR Scan Module
+4. Doctor Dashboard Module
+5. Crew / Ambulance Dashboard Module
+6. JWT Authentication & DB Integration
+7. QR Scanner & Live Location Module
+8. SOS Alert & Medical Report Upload
+DATA FLOW DIAGRAM (ONE DIAGRAM FOR ENTIRE PROJECT)
+[ Patient ]                    [ Emergency Responder ]
+     |                                   |
+     | Register + Submit Medical Info    | Scan QR Code
+     v                                   v
+[ QR Code Generation ]    [ Emergency Access Module ]
+     |                                   |
+     | Store Profile                     | Lookup Patient by QR ID
+     v                                   v
+[ MongoDB - Patient Records ] <------------------------|
+     |
+     |---> [ Doctor Dashboard ]   (Authorized Doctor Access)
+     |
+     |---> [ Crew Dashboard ]     (Ambulance / First Responder)
+     |
+     +---> [ Admin Panel ]         (System Management)
+[ Patient ] ---> [ SOS Alert ] ---> [ Emergency Contact Notification ]
+[ Patient ] ---> [ Upload Report ] ---> [ MongoDB Reports Store ]
+[ Patient ] ---> [ Update Location ] ---> [ Live Location Tracking ]
+
+============================================================
+MEMBER 1: SUJAL R (1ST23CS190)
+MODULES: Patient Registration + QR Code Generation
+============================================================
+
+ALGORITHM 1: Patient Registration Module
+Total Lines: 30
+
+ALGORITHM: PatientRegistration
+INPUT:  name, email, password, role, age, bloodGroup, healthIssues,
+        allergies, medications, emergencyContactName,
+        emergencyContactPhone, emergencyContactRelationship,
+        phone, address, city, state
+OUTPUT: JWT token, user object, unique QR Code ID
+STEP 01: START
+STEP 02: RECEIVE registration form data from HTTP POST /api/auth/register
+STEP 03: VALIDATE required fields: name, email, password, role
+STEP 04: IF any required field is missing THEN
+STEP 05:     RETURN HTTP 400 error "Required fields missing"
+STEP 06: END IF
+STEP 07: QUERY MongoDB for existing user with same email
+STEP 08: IF duplicate email found THEN
+STEP 09:     RETURN HTTP 409 error "Email already registered"
+STEP 10: END IF
+STEP 11: HASH password using bcrypt with salt rounds = 10
+STEP 12: INITIALIZE userData object with: name, email, hashedPassword, role, gender, phone, address
+STEP 13: IF role == "patient" THEN
+STEP 14:     SET userData.age, bloodGroup, healthIssues, allergies, medications
+STEP 15:     IF emergencyContactName AND emergencyContactPhone are provided THEN
+STEP 16:         SET userData.emergencyContact = { name, phone, relationship }
+STEP 17:     END IF
+STEP 18:     CALL generatePatientQrCodeId(name) to produce unique QR ID
+STEP 19:     FORMAT QR ID as: [FirstThreeLetters][DateSegment][RandomSuffix]
+STEP 20:     VERIFY ID uniqueness by querying MongoDB, regenerate if duplicate
+STEP 21:     CONSTRUCT emergency URL: frontendUrl + /emergency_access.html?id=QR_ID
+STEP 22:     GENERATE QR code image (PNG, 300x300) using QRCode.toDataURL()
+STEP 23:     STORE QR image as Base64 Data URL in userData.qrCode
+STEP 24: ELSE IF role == "doctor" THEN
+STEP 25:     SET userData.specialization, licenseNumber, hospital
+STEP 26: ELSE IF role == "crew" THEN
+STEP 27:     SET userData.vehicleNumber, crewType, station
+STEP 28: END IF
+STEP 29: SAVE user to MongoDB via User.create(userData)
+STEP 30: SIGN JWT token with userId and role; RETURN token + user; END
+
+------------------------------------------------------------
+
+ALGORITHM 2: QR Code Generation Module
+Total Lines: 30
+
+ALGORITHM: QRCodeGeneration
+INPUT:  patientName, patientId (MongoDB ObjectId), frontendBaseUrl
+OUTPUT: Unique QR Code ID string, QR Code PNG image (Base64 Data URL)
+STEP 01: START
+STEP 02: RECEIVE patient name from registration or profile update trigger
+STEP 03: CALL formatNamePrefix(name): strip non-alpha chars, uppercase, take first 3 letters
+STEP 04: IF cleaned name is empty THEN SET prefix = "USR" END IF
+STEP 05: CALL getDateSegment(): get current day, month, year (2-digit)
+STEP 06: RANDOMLY select one of [day, month, year] as the date segment
+STEP 07: CALL randomSuffix(length): length is randomly 1 or 2 characters
+STEP 08: GENERATE characters from charset: A-Z + 0-9
+STEP 09: CONCATENATE: qrCodeId = prefix + dateSegment + suffix
+STEP 10: Example output: "SUJ060K" or "SUJ2606A"
+STEP 11: QUERY MongoDB: IF User.findOne({ qrCodeId }) exists THEN
+STEP 12:     LOOP BACK to STEP 03 and regenerate ID (collision avoidance)
+STEP 13: END LOOP (exit when unique ID confirmed)
+STEP 14: ASSIGN confirmed unique qrCodeId to userData.qrCodeId
+STEP 15: BUILD emergency access URL: frontendUrl + "/emergency_access.html?id=" + qrCodeId
+STEP 16: CONFIGURE QRCode options: errorCorrectionLevel = 'H', type = 'image/png'
+STEP 17: SET QR image dimensions: width = 300, margin = 2
+STEP 18: SET QR color: dark = '#000000', light = '#FFFFFF'
+STEP 19: CALL QRCode.toDataURL(emergencyURL, options) to get Base64 PNG string
+STEP 20: STORE Base64 QR string in userData.qrCode field
+STEP 21: SAVE user document to MongoDB with qrCode and qrCodeId
+STEP 22: ON profile update: RECALCULATE QR with color dark = '#6818f4' (purple branded)
+STEP 23: OVERWRITE existing user.qrCode with new generated QR
+STEP 24: ON /api/patient/regenerate-qr POST request (authenticated patient only)
+STEP 25: FETCH patient from DB using JWT userId
+STEP 26: IF user not found OR role is not "patient" THEN RETURN 404 error END IF
+STEP 27: RE-GENERATE QR code using same qrCodeId (URL remains same)
+STEP 28: UPDATE user.qrCode with newly generated Base64 PNG
+STEP 29: SAVE updated document to MongoDB
+STEP 30: RETURN regenerated QR code as JSON response; END
+
+============================================================
+MEMBER 2: SHREYAS GOWDA C (1ST23CS173)
+MODULES: Emergency Access + Doctor Dashboard
+============================================================
+
+ALGORITHM 3: Emergency Access & QR Scan Module
+Total Lines: 30
+
+ALGORITHM: EmergencyAccess
+INPUT:  qrCodeId (extracted from scanned QR URL query parameter)
+OUTPUT: Patient medical profile (public or restricted view)
+STEP 01: START
+STEP 02: RECEIVE HTTP GET request to /api/patient/profile/:qrCodeId
+STEP 03: EXTRACT qrCodeId from URL path parameter
+STEP 04: IF qrCodeId is null or empty THEN
+STEP 05:     RETURN HTTP 400 error "QR Code ID is required"
+STEP 06: END IF
+STEP 07: QUERY MongoDB: User.findOne({ qrCodeId, role: 'patient' })
+STEP 08: EXCLUDE sensitive fields: password, plainPassword, __v
+STEP 09: IF patient document not found THEN
+STEP 10:     RETURN HTTP 404 error "Patient not found"
+STEP 11: END IF
+STEP 12: CHECK patient.publicProfile flag value
+STEP 13: IF publicProfile == false (private profile) THEN
+STEP 14:     CONSTRUCT restricted response with only:
+STEP 15:     { qrCodeId, name, gender, age, bloodGroup, emergencyContact, phone, lastLocation }
+STEP 16:     APPEND message: "Private profile - only emergency fields shown"
+STEP 17:     RETURN restricted response with HTTP 200
+STEP 18: END IF
+STEP 19: IF publicProfile == true THEN
+STEP 20:     CONSTRUCT full response with:
+STEP 21:     { qrCodeId, name, gender, age, bloodGroup, allergies, healthIssues,
+STEP 22:       medications, emergencyContact, phone, lastLocation }
+STEP 23:     RETURN full medical profile response with HTTP 200
+STEP 24: END IF
+STEP 25: ON frontend emergency_access.html page: EXTRACT id= param from URL
+STEP 26: FETCH patient data from backend API using the extracted QR ID
+STEP 27: DISPLAY medical information in formatted emergency card UI
+STEP 28: PROVIDE one-click call button for emergency contact phone
+STEP 29: LOG scan event if responder is authenticated (doctor/crew role)
+STEP 30: END
+
+------------------------------------------------------------
+
+ALGORITHM 4: Doctor Dashboard Module
+Total Lines: 30
+
+ALGORITHM: DoctorDashboard
+INPUT:  JWT Bearer token (doctor role), optional qrCodeId for patient lookup
+OUTPUT: List of authorized patients OR detailed patient record
+STEP 01: START
+STEP 02: RECEIVE HTTP GET /api/patient/doctor/patients with Authorization header
+STEP 03: CALL authenticateToken middleware: extract and verify JWT
+STEP 04: IF token is invalid or expired THEN
+STEP 05:     RETURN HTTP 401 error "Invalid token"
+STEP 06: END IF
+STEP 07: CHECK decoded token: IF role is not "doctor" THEN
+STEP 08:     RETURN HTTP 403 error "Doctor access required"
+STEP 09: END IF
+STEP 10: EXTRACT doctorId from decoded JWT payload (userId field)
+STEP 11: QUERY MongoDB: find all patients where authorizedDoctors.doctorId == doctorId
+STEP 12: SELECT fields: name, email, qrCodeId, publicProfile, lastLocation, reports, sosAlerts
+STEP 13: MAP each patient to summary: { id, name, email, qrCodeId, publicProfile, lastLocation,
+STEP 14:   reportCount, sosCount, activityCount }
+STEP 15: RETURN summary list as JSON response
+STEP 16: FOR INDIVIDUAL PATIENT DETAIL:
+STEP 17: RECEIVE HTTP GET /api/patient/doctor/patient/:qrCodeId
+STEP 18: AUTHENTICATE token and confirm role == "doctor"
+STEP 19: QUERY MongoDB for patient by qrCodeId with role "patient"
+STEP 20: IF patient not found THEN RETURN HTTP 404 error END IF
+STEP 21: CHECK if doctorId is in patient.authorizedDoctors array
+STEP 22: SET canViewSensitive = (patient.publicProfile OR doctor is authorized)
+STEP 23: BUILD response object: { qrCodeId, name, gender, age, bloodGroup,
+STEP 24:   emergencyContact, phone, lastLocation, publicProfile, authorized }
+STEP 25: IF canViewSensitive == true THEN
+STEP 26:     INCLUDE reports, activities, sosAlerts arrays in response
+STEP 27: ELSE
+STEP 28:     RETURN empty arrays + message "Patient is private. Request access."
+STEP 29: END IF
+STEP 30: RETURN full or restricted patient detail JSON; END
+
+============================================================
+MEMBER 3: SUJIT M REDDY (1ST23CS192)
+MODULES: Crew/Ambulance Dashboard + JWT Authentication & DB Integration
+============================================================
+
+ALGORITHM 5: Crew / Ambulance Dashboard Module
+Total Lines: 30
+
+ALGORITHM: CrewAmbulanceDashboard
+INPUT:  JWT Bearer token (crew role), qrCodeId of patient (from QR scan on scene)
+OUTPUT: Patient emergency profile, scan history log, response actions
+STEP 01: START
+STEP 02: RECEIVE HTTP POST /api/patient/log-scan/:qrCodeId with Authorization header
+STEP 03: CALL authenticateToken middleware: verify JWT token validity
+STEP 04: IF token is invalid THEN RETURN HTTP 401 error "Access denied" END IF
+STEP 05: CHECK decoded role: IF role is not "doctor" AND role is not "crew" THEN
+STEP 06:     RETURN HTTP 403 error "Only doctors and crew can log scans"
+STEP 07: END IF
+STEP 08: EXTRACT qrCodeId from URL path parameter
+STEP 09: FETCH scanner details: User.findById(userId).select('name role')
+STEP 10: IF scanner not found THEN RETURN HTTP 404 error "Scanner not found" END IF
+STEP 11: QUERY MongoDB: Patient.findOne({ qrCodeId, role: 'patient' })
+STEP 12: IF patient not found THEN RETURN HTTP 404 error "Patient not found" END IF
+STEP 13: DETERMINE activity type:
+STEP 14:     IF role == "doctor" THEN type = "Doctor Scan"
+STEP 15:     ELSE type = "Crew Scan"
+STEP 16: BUILD activity log object:
+STEP 17:     { type, title: "Crew Access - [scannerName]",
+STEP 18:       description: "[scannerName] (crew) scanned your QR code",
+STEP 19:       metadata: { scannerId, scannerName, scannerRole, scanType },
+STEP 20:       timestamp: new Date() }
+STEP 21: PREPEND activity to patient.activities array using unshift()
+STEP 22: SAVE updated patient document to MongoDB
+STEP 23: RETURN HTTP 200 with { message: "Scan logged", activity }
+STEP 24: CREW DASHBOARD FRONTEND LOGIC:
+STEP 25: ON page load: FETCH crew member's authenticated profile (/api/patient/me)
+STEP 26: DISPLAY assigned incident list and response history on dashboard
+STEP 27: ALLOW QR scan via camera (jsQR / ZXing library on frontend)
+STEP 28: ON successful scan: POST to /api/patient/log-scan/:qrCodeId with auth token
+STEP 29: DISPLAY patient emergency card: name, blood group, allergies, emergency contact
+STEP 30: PROVIDE direct-dial button for emergency contact number; END
+
+------------------------------------------------------------
+
+ALGORITHM 6: JWT Authentication & Backend Database Integration
+Total Lines: 30
+
+ALGORITHM: JWTAuthenticationSystem
+INPUT:  email, password (for login); token (for protected routes)
+OUTPUT: JWT token string (on login); decoded user payload (on verification)
+STEP 01: START
+STEP 02: LOGIN FLOW:
+STEP 03: RECEIVE HTTP POST /api/auth/login with { email, password }
+STEP 04: VALIDATE: IF email or password is missing THEN RETURN 400 error END IF
+STEP 05: QUERY MongoDB: User.findOne({ email })
+STEP 06: IF user not found THEN RETURN HTTP 401 "Invalid email or password" END IF
+STEP 07: CALL bcrypt.compare(inputPassword, user.hashedPassword)
+STEP 08: IF password does not match THEN RETURN HTTP 401 "Invalid credentials" END IF
+STEP 09: CHECK user.active flag: IF active == false THEN RETURN 403 "Account deactivated" END IF
+STEP 10: SIGN JWT: jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' })
+STEP 11: RETURN HTTP 200 with { message, token, user: { id, name, email, role, qrCode } }
+STEP 12: TOKEN VERIFICATION MIDDLEWARE:
+STEP 13: EXTRACT token from request header: Authorization.split(' ')[1]
+STEP 14: IF no token THEN RETURN HTTP 401 "No token provided" END IF
+STEP 15: CALL jwt.verify(token, JWT_SECRET) to decode payload
+STEP 16: IF verification throws error THEN RETURN HTTP 401 "Invalid token" END IF
+STEP 17: ATTACH decoded payload to req.user for downstream route handlers
+STEP 18: CALL next() to proceed to protected route handler
+STEP 19: DATABASE INTEGRATION (MongoDB / Mongoose):
+STEP 20: ON server start: CALL mongoose.connect(MONGO_URI, options)
+STEP 21: SET options: serverSelectionTimeoutMS=10000, socketTimeoutMS=45000, maxPoolSize=10
+STEP 22: IF MONGO_URI starts with "mongodb+srv://" THEN use public DNS (8.8.8.8, 1.1.1.1)
+STEP 23: ON successful connection: LOG "MongoDB Connected Successfully"
+STEP 24: ON connection failure in production: LOG error and process.exit(1)
+STEP 25: ON connection failure in development: START server without DB in limited mode
+STEP 26: DEFINE User schema with Mongoose: name, email, password, role, qrCode, qrCodeId,
+STEP 27:   age, bloodGroup, allergies, medications, emergencyContact, reports, sosAlerts
+STEP 28: USE bcrypt.hash(password, 10) for all stored passwords
+STEP 29: HANDLE SIGTERM gracefully: close mongoose connection before exit
+STEP 30: RETURN authenticated session with role-based route access; END
+
+============================================================
+MEMBER 4: TARUN S ACHARY (1ST23CS199)
+MODULES: QR Scanner & Live Location + SOS Alert & Medical Report Upload
+============================================================
+
+ALGORITHM 7: QR Scanner & Live Location Module
+Total Lines: 30
+
+ALGORITHM: QRScannerAndLiveLocation
+INPUT:  Camera video stream (device camera), lat/lng (GPS coordinates)
+OUTPUT: Decoded QR content (patient URL), location stored in DB
+STEP 01: START
+STEP 02: QR SCANNER FRONTEND LOGIC:
+STEP 03: REQUEST camera permissions using navigator.mediaDevices.getUserMedia()
+STEP 04: IF permission denied THEN SHOW error: "Camera access required for QR scan" END IF
+STEP 05: START video stream and render to video HTML element on page
+STEP 06: CREATE canvas element for frame capture and pixel analysis
+STEP 07: ON each animation frame: DRAW video frame to canvas using drawImage()
+STEP 08: EXTRACT pixel data from canvas using getImageData() method
+STEP 09: PASS pixel data to jsQR() or ZXing decoder library for analysis
+STEP 10: IF QR code is detected THEN
+STEP 11:     EXTRACT decoded URL string from QR result object
+STEP 12:     PARSE URL: extract id= query parameter (the patient QR Code ID)
+STEP 13:     STOP camera stream (avoid continuous scanning after detection)
+STEP 14:     NAVIGATE to emergency_access.html?id=[extractedId]
+STEP 15: ELSE
+STEP 16:     CONTINUE scanning loop until QR is detected or user cancels
+STEP 17: END IF
+STEP 18: LIVE LOCATION UPDATE:
+STEP 19: ON patient dashboard load: CHECK if Geolocation API is supported
+STEP 20: CALL navigator.geolocation.watchPosition() for continuous updates
+STEP 21: ON position update: EXTRACT lat, lng from position.coords object
+STEP 22: SEND HTTP PUT /api/patient/location with { lat, lng } and JWT Bearer token
+STEP 23: VALIDATE: IF typeof lat is not number OR typeof lng is not number THEN RETURN 400 error
+STEP 24: QUERY MongoDB: find patient by userId from JWT payload
+STEP 25: IF patient not found OR role is not "patient" THEN RETURN 404 error END IF
+STEP 26: UPDATE patient.lastLocation = { lat, lng, updatedAt: new Date() }
+STEP 27: SAVE updated document to MongoDB
+STEP 28: RETURN HTTP 200 with { message: "Location updated", lastLocation }
+STEP 29: DISPLAY updated location on patient dashboard map UI
+STEP 30: END
+
+------------------------------------------------------------
+
+ALGORITHM 8: SOS Alert & Medical Report Upload
+Total Lines: 30
+
+ALGORITHM: SOSAlertAndReportUpload
+INPUT:  JWT token, lat/lng/message/sentTo (SOS), file/category/description (Report)
+OUTPUT: SOS alert record in DB, uploaded report record in DB
+STEP 01: START
+STEP 02: SOS ALERT FLOW:
+STEP 03: RECEIVE HTTP POST /api/patient/sos with Authorization header
+STEP 04: AUTHENTICATE JWT token using authenticateToken middleware
+STEP 05: EXTRACT { lat, lng, message, sentTo } from request body
+STEP 06: VALIDATE: IF typeof lat is not number OR typeof lng is not number THEN
+STEP 07:     RETURN HTTP 400 error "Latitude and longitude are required"
+STEP 08: END IF
+STEP 09: QUERY MongoDB: User.findById(userId from JWT)
+STEP 10: IF user not found OR role is not "patient" THEN RETURN 404 error END IF
+STEP 11: BUILD sosAlert object:
+STEP 12:     { status: 'sent', location: { lat, lng },
+STEP 13:       message: message OR 'Emergency SOS request',
+STEP 14:       sentTo: (Array.isArray(sentTo) ? sentTo : []),
+STEP 15:       createdAt: new Date() }
+STEP 16: PREPEND sosAlert to user.sosAlerts array using unshift()
+STEP 17: PREPEND SOS activity log to user.activities array:
+STEP 18:     { type: 'SOS', title: 'Emergency SOS Sent', description, metadata, timestamp }
+STEP 19: SAVE user document to MongoDB with updated sosAlerts and activities
+STEP 20: RETURN HTTP 200 { message: "SOS alert created", sosAlert }
+STEP 21: MEDICAL REPORT UPLOAD FLOW:
+STEP 22: RECEIVE HTTP POST /api/patient/reports/upload with multipart/form-data
+STEP 23: AUTHENTICATE JWT and verify role == "patient"
+STEP 24: IF no file provided THEN RETURN HTTP 400 "Report file is required" END IF
+STEP 25: SAVE uploaded file to /uploads/reports/ folder using multer middleware
+STEP 26: BUILD report object:
+STEP 27:     { filename, originalName, mimeType, url: '/uploads/[filename]',
+STEP 28:       category: category OR 'General', description, uploadedAt: new Date() }
+STEP 29: PREPEND report to user.reports array and add "Report Upload" activity log
+STEP 30: SAVE to MongoDB; RETURN HTTP 200 { message: "Report uploaded", report }; END
+
+Report prepared by Batch Members — Sambhram Institute of Technology, CSE Department
+Date: June 2026

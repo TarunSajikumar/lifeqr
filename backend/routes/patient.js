@@ -25,7 +25,10 @@ const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {
@@ -221,6 +224,20 @@ router.post('/reports/upload', authenticateToken, upload.single('report'), async
 
     if (!req.file) {
       return res.status(400).json({ error: 'Report file is required' });
+    }
+
+    // Server-side File Validation (MIME type and size limit)
+    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+      // Remove invalid uploaded file
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'Invalid file type. Only PDFs, JPEGs, and PNGs are allowed.' });
+    }
+
+    const maxFileSize = 5 * 1024 * 1024; // 5MB limit
+    if (req.file.size > maxFileSize) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: 'File size exceeds the 5MB limit.' });
     }
 
     const { category, description } = req.body;
@@ -509,6 +526,24 @@ router.post('/log-scan/:qrCodeId', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error logging scan:', error);
     res.status(500).json({ error: 'Failed to log scan' });
+  }
+});
+
+// Delete user account (GDPR Compliant Data Deletion Flow)
+router.delete('/delete-account', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete user from database completely (removes all PII, activity logs, reports, emergency contacts)
+    await User.findByIdAndDelete(req.user.userId);
+
+    res.json({ message: 'Your account and all associated personal medical data have been deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting user account:', error);
+    res.status(500).json({ error: 'Failed to delete account. Please try again.' });
   }
 });
 

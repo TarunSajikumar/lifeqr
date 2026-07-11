@@ -49,3 +49,11 @@
 Made with ❤️ for saving lives, one scan at a time.
 
 **LifeQR - When every second counts.**
+
+---
+
+## 🔒 Security Notice
+
+> [!WARNING]
+> **Git History Exposure & Secret Rotation**: If secrets (such as `MONGO_URI` or `JWT_SECRET`) were previously committed in the code repository's history, they must be considered compromised. Rotate these credentials immediately on your production systems and MongoDB Atlas dashboard.
+

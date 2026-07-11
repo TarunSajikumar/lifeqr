@@ -6,47 +6,102 @@ const path = require("path");
 const fs = require("fs");
 const https = require("https");
 const http = require("http");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const cookieParser = require("cookie-parser");
+const socketIo = require("socket.io");
 const { getFrontendUrl, isSecureUrl } = require("./utils/frontendUrl");
 require("dotenv").config();
 
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
-// Middleware
+// Security Headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.material.com", "https://fonts.googleapis.com/css2"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https://lifeqr-new.onrender.com", "/uploads/photos/", "/uploads/reports/"],
+      connectSrc: ["'self'", "https://lifeqr-new.onrender.com", "ws:", "wss:", "http://localhost:5000", "https://localhost:5000"]
+    }
+  }
+}));
+
+// CORS Configuration
+const allowedOrigins = [
+  getFrontendUrl(),
+  "https://lifeqr-new.onrender.com",
+  "http://localhost:5000",
+  "https://localhost:5000"
+];
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Rate Limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: "Too many requests, please try again after 15 minutes"
+});
+app.use("/api/v1/auth/login", authLimiter);
+app.use("/api/v1/auth/register", authLimiter);
+app.use("/api/v1/auth/forgot-password", authLimiter);
+
+// Payload limit
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ limit: '50kb', extended: true }));
+app.use(cookieParser());
 
 // Serve static files from frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
-const authRoutes = require("./routes/auth");
-const patientRoutes = require("./routes/patient");
-const adminRoutes = require("./routes/admin");
+// API Version 1 Routes
+const authRoutes = require("./routes/v1/auth");
+const patientProfileRoutes = require("./routes/v1/patientProfile");
+const sosRoutes = require("./routes/v1/sos");
+const reportsRoutes = require("./routes/v1/reports");
+const medicalHistoryRoutes = require("./routes/v1/medicalHistory");
+const doctorAccessRoutes = require("./routes/v1/doctorAccess");
+const adminRoutes = require("./routes/v1/admin");
 
-app.use("/api/auth", authRoutes);
-app.use("/api/patient", patientRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/patient", patientProfileRoutes);
+app.use("/api/v1/sos", sosRoutes);
+app.use("/api/v1/reports", reportsRoutes);
+app.use("/api/v1/history", medicalHistoryRoutes);
+app.use("/api/v1/doctor-access", doctorAccessRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 // Health check route
-app.get("/api/health", (req, res) => {
+app.get("/api/v1/health", (req, res) => {
   res.json({ 
     status: "healthy",
-    message: "LifeQR backend is running 🚑",
+    message: "LifeQR API v1 is fully operational 🚑",
     timestamp: new Date().toISOString()
   });
 });
 
-// API error handler to return JSON instead of HTML
+// API error handler to return generic JSON error to clients
 app.use((err, req, res, next) => {
   console.error('Unhandled server error:', err);
   if (req.originalUrl.startsWith('/api')) {
-    return res.status(500).json({ error: err.message || 'Internal server error' });
+    const isProd = process.env.NODE_ENV === 'production';
+    return res.status(500).json({ 
+      error: isProd ? 'An internal server error occurred' : err.message,
+      correlationId: req.headers['x-request-id'] || 'N/A'
+    });
   }
   next(err);
 });
@@ -60,17 +115,17 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    // Fail fast in production if MongoDB URI is missing
+    // Fail fast if critical environment variables are missing
     if (!process.env.MONGO_URI) {
-      const message = 'MONGO_URI is required in production. Set it in Render environment variables.';
-      console.error(`❌ ${message}`);
-      if (process.env.NODE_ENV === 'production') {
-        process.exit(1);
-      }
-      console.warn('⚠️  MONGO_URI not found in .env file. Using local MongoDB for development only.');
+      console.error('❌ Error: MONGO_URI is required in all environments. Please set it in your environment variables or .env file.');
+      process.exit(1);
+    }
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ Error: JWT_SECRET is required. Please set it in your environment variables or .env file.');
+      process.exit(1);
     }
 
-    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/lifeqr';
+    const mongoURI = process.env.MONGO_URI;
 
     if (mongoURI.startsWith('mongodb+srv://')) {
       dns.setServers(['8.8.8.8', '1.1.1.1']);
@@ -88,124 +143,77 @@ const startServer = async () => {
 
     // Start server - listen on all network interfaces
     const frontendUrl = getFrontendUrl();
-    const publicHttpsAvailable = isSecureUrl(frontendUrl);
-
-    // Check if HTTPS certificates exist locally
-    const certPath = path.join(__dirname, 'certs', 'server.crt');
-    const keyPath = path.join(__dirname, 'certs', 'server.key');
-    const useHttps = fs.existsSync(certPath) && fs.existsSync(keyPath);
+    const useHttps = false; // Force HTTP locally and let proxies (Render, etc.) handle SSL
 
     let server;
-
     if (useHttps) {
-      const options = {
-        cert: fs.readFileSync(certPath),
-        key: fs.readFileSync(keyPath)
-      };
-      server = https.createServer(options, app);
-      server.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 HTTPS Server running on port ${PORT}`);
-        console.log(`\n🔒 SECURE CONNECTION (HTTPS)`);
-        console.log(`📍 Localhost: https://localhost:${PORT}`);
-        console.log(`🌐 Public URL: ${frontendUrl}`);
-        console.log(`\n📱 Camera access is now enabled on all devices!`);
-        console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`\n⚠️  Note: You may see a security warning on first visit - this is normal for self-signed certificates. Click "Continue" or "Accept Risk".`);
-      });
-    } else if (publicHttpsAvailable) {
-      server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 HTTP Server running on port ${PORT} behind HTTPS proxy`);
-        console.log(`\n🌐 Public URL: ${frontendUrl}`);
-        console.log(`📱 Camera access should work when the app is opened through the public HTTPS URL above.`);
-        console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
-      });
+      // Check if HTTPS certificates exist locally
+      const certPath = path.join(__dirname, 'certs', 'server.crt');
+      const keyPath = path.join(__dirname, 'certs', 'server.key');
+      const secureConfig = fs.existsSync(certPath) && fs.existsSync(keyPath);
+
+      if (secureConfig) {
+        const options = {
+          cert: fs.readFileSync(certPath),
+          key: fs.readFileSync(keyPath)
+        };
+        server = https.createServer(options, app);
+      } else {
+        server = http.createServer(app);
+      }
     } else {
-      server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`🚀 HTTP Server running on port ${PORT}`);
-        console.log(`\n⚠️  WARNING: Using HTTP - Camera access will NOT work on mobile devices`);
-        console.log(`📍 Localhost: http://localhost:${PORT}`);
-        console.log(`\n✅ TO FIX CAMERA ACCESS:`);
-        console.log(`   1. Stop this server (Ctrl+C)`);
-        console.log(`   2. Run: node generate-cert.js`);
-        console.log(`   3. Run: npm start (again)`);
-        console.log(`4. Access via HTTPS: ${frontendUrl}/emergency_access.html`);
-        console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
-      });
+      server = http.createServer(app);
     }
+
+    // Integrate Socket.IO with server instance
+    const io = socketIo(server, {
+      cors: {
+        origin: allowedOrigins,
+        credentials: true
+      }
+    });
+
+    // Make Socket.IO available to routes
+    app.set('io', io);
+
+    io.on('connection', (socket) => {
+      console.log(`🔌 New client connected to Socket.IO: ${socket.id}`);
+      
+      socket.on('join-room', (room) => {
+        socket.join(room);
+        console.log(`👤 Client joined notification room: ${room}`);
+      });
+
+      socket.on('disconnect', () => {
+        console.log(`🔌 Client disconnected: ${socket.id}`);
+      });
+    });
+
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
 
     server.on('error', (listenErr) => {
       if (listenErr.code === 'EADDRINUSE') {
-        console.error(`❌ Port ${PORT} is already in use. Please stop the process using it or set PORT to a free port.`);
+        console.error(`❌ Port ${PORT} is already in use.`);
       } else {
         console.error('❌ Server listen failed:', listenErr);
       }
       process.exit(1);
     });
+
+    // Handle graceful shutdown
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received, closing server gracefully...');
+      await mongoose.connection.close();
+      process.exit(0);
+    });
+
   } catch (err) {
     console.error("❌ Server failed to start:", err);
-    if (process.env.NODE_ENV === 'production') {
-      console.error('❌ Exiting because MongoDB connection failed in production.');
-      process.exit(1);
-    }
-
-    console.log("\n⚠️  Attempting to start server without MongoDB connection for development only...");
-    
-    const frontendUrl = getFrontendUrl();
-    const publicHttpsAvailable = isSecureUrl(frontendUrl);
-    
-    // Check if HTTPS certificates exist
-    const certPath = path.join(__dirname, 'certs', 'server.crt');
-    const keyPath = path.join(__dirname, 'certs', 'server.key');
-    const useHttps = fs.existsSync(certPath) && fs.existsSync(keyPath);
-    
-    let server;
-    
-    if (useHttps) {
-      const options = {
-        cert: fs.readFileSync(certPath),
-        key: fs.readFileSync(keyPath)
-      };
-      server = https.createServer(options, app);
-      server.listen(PORT, '0.0.0.0', () => {
-        console.log(`\n⚠️  SERVER RUNNING WITHOUT DATABASE (HTTPS)`);
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`🌐 Public URL: ${frontendUrl}`);
-        console.log(`\n💡 Note: Database features won\'t work until MongoDB is connected`);
-      });
-    } else if (publicHttpsAvailable) {
-      server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`\n⚠️  SERVER RUNNING WITHOUT DATABASE (HTTP)`);
-        console.log(`🚀 Server running on port ${PORT} behind HTTPS proxy`);
-        console.log(`🌐 Public URL: ${frontendUrl}`);
-        console.log(`\n💡 Note: Database features won\'t work until MongoDB is connected`);
-      });
-    } else {
-      server = app.listen(PORT, '0.0.0.0', () => {
-        console.log(`\n⚠️  SERVER RUNNING WITHOUT DATABASE (HTTP)`);
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📍 Localhost: http://localhost:${PORT}`);
-        console.log(`\n💡 Note: Database features won\'t work until MongoDB is connected`);
-        console.log(`🔒 For camera access on phone, generate HTTPS certificates:`);
-        console.log(`   node generate-cert.js && npm start`);
-      });
-    }
-
-    server.on('error', (listenErr) => {
-      if (listenErr.code === 'EADDRINUSE') {
-        console.error(`❌ Port ${PORT} is already in use. Please stop the process using it or set PORT to a free port.`);
-      } else {
-        console.error('❌ Server listen failed:', listenErr);
-      }
-      process.exit(1);
-    });
+    process.exit(1);
   }
 };
-
-// Handle graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, closing server gracefully...');
-  await mongoose.connection.close();
-  process.exit(0);
-});
 
 startServer();

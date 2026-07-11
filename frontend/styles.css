@@ -1,78 +1,218 @@
+/* Core CSS variables for LifeQR Design System */
 :root {
+  --primary: #6818f4;
+  --primary-hover: #4f3bb3;
+  --primary-light: rgba(104, 24, 244, 0.1);
+  
+  --secondary: #5c4dbe;
+  
+  --emergency: #dc2626;
+  --emergency-hover: #991b1b;
+  --emergency-light: rgba(220, 38, 38, 0.1);
+  
+  --success: #16a34a;
+  --success-light: rgba(22, 163, 74, 0.1);
+  
+  --warning: #ca8a04;
+  --warning-light: rgba(202, 138, 4, 0.1);
+  
+  --info: #2563eb;
+  --info-light: rgba(37, 99, 235, 0.1);
+  
+  --neutral-50: #faf9fe;
+  --neutral-100: #f3f4f6;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #d1d5db;
+  --neutral-600: #4b5563;
+  --neutral-900: #111827;
+
+  --glass-card: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(128, 75, 255, 0.15);
+  
+  --font-family: 'Inter', sans-serif;
+  --font-headline: 'Manrope', sans-serif;
+  
   font-size: clamp(14px, 1.1vw, 16px);
 }
 
 body {
   min-height: 100vh;
-  background-color: #f8f7ff;
-  color: #1f2937;
+  font-family: var(--font-family);
+  background-color: #faf9fe;
+  background-image: radial-gradient(at 0% 0%, rgba(104, 24, 244, 0.04) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(92, 77, 190, 0.04) 0px, transparent 50%);
+  color: var(--neutral-900);
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
-img, svg {
-  max-width: 100%;
-  height: auto;
-}
-
-button, input, textarea, select {
-  min-width: 0;
-}
-
+/* Glassmorphism Styles */
 .glass-card {
-  min-width: 0;
+  background: var(--glass-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  box-shadow: 0 25px 40px -10px rgba(104, 24, 244, 0.08);
 }
 
 .hero-gradient {
-  background: linear-gradient(135deg, #6818f4 0%, #4f3bb3 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
 }
 
-@media (max-width: 1024px) {
-  .container-responsive {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
+.emergency-gradient {
+  background: linear-gradient(135deg, var(--emergency) 0%, var(--emergency-hover) 100%);
 }
 
-@media (max-width: 768px) {
+/* Skeleton Loading Animation */
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: loading-pulse 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes loading-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Reusable Toast Notifications Styling */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  width: calc(100% - 48px);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--neutral-200);
+  transform: translateY(-20px);
+  opacity: 0;
+  animation: slide-in 0.3s forwards cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
+}
+
+@keyframes slide-in {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.toast.toast-success {
+  border-left: 5px solid var(--success);
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.toast.toast-error {
+  border-left: 5px solid var(--emergency);
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.toast.toast-warning {
+  border-left: 5px solid var(--warning);
+  background: #fefcbf;
+  color: #854d0e;
+}
+
+.toast.toast-info {
+  border-left: 5px solid var(--info);
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.toast.toast-emergency {
+  border-left: 5px solid var(--emergency);
+  background: var(--emergency);
+  color: #ffffff;
+  animation: pulse-alert 2s infinite;
+}
+
+@keyframes pulse-alert {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+/* Printable wallet card styling */
+.wallet-card-container {
+  width: 85mm;
+  height: 55mm;
+  padding: 4mm;
+  background: #ffffff;
+  border: 1.5px solid var(--primary);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 4mm;
+  color: #000;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-size: 11px;
+}
+
+.wallet-card-container h2 {
+  font-size: 16px;
+  font-family: var(--font-headline);
+  font-weight: 800;
+  margin: 0;
+  color: var(--primary);
+}
+
+.wallet-card-qr {
+  width: 32mm;
+  height: 32mm;
+  object-fit: contain;
+}
+
+/* Print Stylesheet */
+@media print {
   body {
-    font-size: 15px;
+    background: none !important;
+    color: #000 !important;
+  }
+  
+  header, footer, nav, button, .no-print {
+    display: none !important;
   }
 
-  h1 {
-    font-size: clamp(2rem, 6vw, 2.75rem);
+  .print-page {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
   }
-
-  h2 {
-    font-size: clamp(1.5rem, 5vw, 2.25rem);
-  }
-
-  .glass-card {
-    padding: 1.25rem !important;
-  }
-
-  .hero-gradient {
-    padding: 1.25rem;
-  }
-
-  .material-symbols-outlined {
-    font-size: 1.2rem;
+  
+  .wallet-card-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    border: 1px solid #000 !important;
+    page-break-inside: avoid;
   }
 }
 
-@media (max-width: 640px) {
-  .glass-card {
-    border-radius: 1.5rem;
-  }
-
-  .section-heading {
-    font-size: 1.35rem;
-  }
-
-  .action-button {
-    width: 100%;
-  }
-
-  .stack-sm {
-    display: block;
-  }
+/* Responsiveness media queries */
+@media (max-width: 768px) {
+  h1 { font-size: clamp(2rem, 6vw, 2.75rem); }
+  h2 { font-size: clamp(1.5rem, 5vw, 2.25rem); }
+  .glass-card { padding: 1.25rem !important; }
 }

@@ -13,11 +13,14 @@ const authenticateAdmin = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
 
-    // For now, allow all authenticated users as admin. In production, check role
-    if (!req.user) {
+    // Enforce admin role check
+    if (!req.user || req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -27,10 +30,10 @@ const authenticateAdmin = (req, res, next) => {
   }
 };
 
-// Get all users with passwords (for admin)
+// Get all users (for admin)
 router.get('/users', authenticateAdmin, async (req, res) => {
   try {
-    const users = await User.find({}).select('name email role plainPassword password createdAt');
+    const users = await User.find({}).select('name email role createdAt');
 
     res.json({
       success: true,
@@ -39,8 +42,6 @@ router.get('/users', authenticateAdmin, async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        encryptedPassword: user.password,
-        decryptedPassword: user.plainPassword,
         createdAt: user.createdAt
       }))
     });
@@ -53,7 +54,7 @@ router.get('/users', authenticateAdmin, async (req, res) => {
 // Get specific user by ID
 router.get('/users/:id', authenticateAdmin, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).select('name email role createdAt');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -66,8 +67,6 @@ router.get('/users/:id', authenticateAdmin, async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        encryptedPassword: user.password,
-        decryptedPassword: user.plainPassword,
         createdAt: user.createdAt
       }
     });
